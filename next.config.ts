@@ -1,9 +1,8 @@
-import path from "node:path";
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   // a stray lockfile in the home directory confuses workspace-root inference
-  turbopack: { root: path.join(__dirname) },
+  turbopack: { root: import.meta.dirname },
 };
 
 export default nextConfig;
