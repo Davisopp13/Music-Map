@@ -2,10 +2,13 @@ import { createClient } from "@supabase/supabase-js";
 import type { City, CityData, Location, Trail, TrailStop } from "./types";
 import { localCityData } from "./local-data";
 
-const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const key =
+// trim() guards against stray whitespace/newlines pasted into dashboard
+// env fields — an invalid URL makes createClient throw a 500 on every page.
+const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+const key = (
   process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+)?.trim();
 
 export async function getCities(): Promise<City[]> {
   if (!url || !key) {
