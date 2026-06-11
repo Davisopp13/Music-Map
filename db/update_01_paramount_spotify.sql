@@ -25,58 +25,49 @@ where slug = 'paramount-bristol';
 -- Sessions site — Carter Family, "Bury Me Under the Weeping Willow"
 -- (1927 Bristol recording — verify it's the Victor original)
 update locations set
-  spotify_track_id = 'REPLACE_ME',
+  spotify_track_id = '5RecPg6eh36SNp2kBFcDjx',
   spotify_track_label = 'Listen: The Carter Family — "Bury Me Under the Weeping Willow" (recorded here, Aug 1, 1927)'
 where slug = 'bristol-sessions-site';
 
 -- State Street — Ernest Stoneman, "The Sinking of the Titanic"
 -- (NEW pick: Stoneman is why the Sessions came to Bristol)
 update locations set
-  spotify_track_id = 'REPLACE_ME',
+  spotify_track_id = '2EG5B8AQao21jU3Xg0lUhw',
   spotify_track_label = 'Listen: Ernest Stoneman — "The Sinking of the Titanic"'
 where slug = 'state-street-line';
 
 -- Ernie Ford birthplace — "Sixteen Tons" (unmovable)
 update locations set
-  spotify_track_id = 'REPLACE_ME',
+  spotify_track_id = '4KM77RUl2IKdXGhtOBbKIS',
   spotify_track_label = 'Listen: Tennessee Ernie Ford — "Sixteen Tons"'
 where slug = 'tennessee-ernie-ford-birthplace';
 
 -- Carter Family Fold — "Wildwood Flower"
 update locations set
-  spotify_track_id = 'REPLACE_ME',
+  spotify_track_id = '6LXh42hEpcVLKtUgVkiKZi',
   spotify_track_label = 'Listen: The Carter Family — "Wildwood Flower"'
 where slug = 'carter-family-fold';
 
 -- Burger Bar — Hank Williams, "I'll Never Get Out of This World Alive"
 update locations set
-  spotify_track_id = 'REPLACE_ME',
+  spotify_track_id = '4lFqXzZiOXD60B2K9KZsV2',
   spotify_track_label = 'Listen: Hank Williams — "I''ll Never Get Out of This World Alive"'
 where slug = 'burger-bar';
 
 -- Rhythm & Roots — Nitty Gritty Dirt Band, "Will the Circle Be Unbroken"
 update locations set
-  spotify_track_id = 'REPLACE_ME',
-  spotify_track_label = 'Listen: Nitty Gritty Dirt Band — "Will the Circle Be Unbroken"'
+  spotify_track_id = '6uLCZwMwVlOUgLkdXnoBBR',
+  spotify_track_label = 'Listen: Nitty Gritty Dirt Band with Mother Maybelle Carter — "Will the Circle Be Unbroken" (1972)'
 where slug = 'rhythm-and-roots';
 
--- PARAMOUNT — PENDING listening session.
--- Candidates: Bill Monroe (Uncle Pen / Blue Moon of Kentucky),
--- Doc Watson (Tennessee Stud, live), Carlene Carter (Every Little Thing),
--- or stay null and let the prose carry it.
--- Uncomment + fill when decided:
---
--- update locations set
---   spotify_track_id = 'REPLACE_ME',
---   spotify_track_label = 'Listen: REPLACE_ME'
--- where slug = 'paramount-bristol';
+-- PARAMOUNT — DECIDED: Bill Monroe, "Uncle Pen" (live recording)
+update locations set
+  spotify_track_id = '0KHKziyiQYCPYNPjQZS9bU',
+  spotify_track_label = 'Listen: Bill Monroe — "Uncle Pen" (Monroe played this stage)'
+where slug = 'paramount-bristol';
 
 -- Museum + Bristol Sign: intentionally null. Silence is curation.
 
--- -------------------------------------------------------------
--- 3. Clear the placeholder label on Paramount until decided
---    (seed had "Sixteen Tons" there — removing the duplicate)
--- -------------------------------------------------------------
-update locations set
-  spotify_track_label = null
-where slug = 'paramount-bristol';
+-- (Paramount label set above — the seed's duplicate "Sixteen Tons"
+--  is overwritten by the Uncle Pen update. Applied 2026-06-11; the
+--  Ford/Monroe IDs in the original draft were swapped, fixed here.)
