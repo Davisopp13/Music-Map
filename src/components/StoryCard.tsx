@@ -48,17 +48,12 @@ export default function StoryCard({
       </button>
 
       <div className="overflow-y-auto overscroll-contain px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-3 md:pt-5">
-        {location.image_url && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={location.image_url}
-            alt={location.name}
-            className="mb-4 aspect-[3/2] w-full rounded-lg border border-paper-edge object-cover"
-          />
-        )}
+        <h2 className="pr-9 font-display text-[1.65rem] font-semibold leading-[1.15]">
+          {location.name}
+        </h2>
 
         {/* type + era */}
-        <div className="mb-2 flex flex-wrap items-center gap-2 pr-9">
+        <div className="mt-2 flex flex-wrap items-center gap-2">
           <span
             className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-paper"
             style={{ background: cfg.color }}
@@ -69,12 +64,38 @@ export default function StoryCard({
           <EraBadge start={location.era_start} end={location.era_end} />
         </div>
 
-        <h2 className="font-display text-[1.65rem] font-semibold leading-[1.15]">
-          {location.name}
-        </h2>
+        {location.spotify_track_id && (
+          <div className="mt-4">
+            <iframe
+              src={`https://open.spotify.com/embed/track/${location.spotify_track_id}?theme=0`}
+              width="100%"
+              height="80"
+              frameBorder="0"
+              allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+              loading="lazy"
+              title={`Spotify: ${location.name}`}
+              className="rounded-xl"
+            />
+            {location.spotify_track_label && (
+              <p className="mt-2 flex items-start gap-1.5 text-[13px] italic text-ink-soft">
+                <Music2 size={14} className="mt-0.5 shrink-0" />
+                {location.spotify_track_label}
+              </p>
+            )}
+          </div>
+        )}
+
+        {location.image_url && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={location.image_url}
+            alt={location.name}
+            className="mt-4 aspect-[3/2] w-full rounded-lg border border-paper-edge object-cover"
+          />
+        )}
 
         {location.is_orbit && (
-          <p className="mt-1.5 flex items-center gap-1.5 text-[13px] text-ink-soft">
+          <p className="mt-3 flex items-center gap-1.5 text-[13px] text-ink-soft">
             <Compass size={14} />
             About {milesFrom(city, location)} miles from downtown — the orbit
             pin worth the drive
@@ -107,29 +128,6 @@ export default function StoryCard({
             <p className="story-prose text-[15px]">
               {location.what_is_there_now}
             </p>
-          </div>
-        )}
-
-        {(location.spotify_track_id || location.spotify_track_label) && (
-          <div className="mt-5">
-            {location.spotify_track_label && (
-              <p className="mb-2 flex items-start gap-1.5 text-[13px] italic text-ink-soft">
-                <Music2 size={14} className="mt-0.5 shrink-0" />
-                {location.spotify_track_label}
-              </p>
-            )}
-            {location.spotify_track_id && (
-              <iframe
-                src={`https://open.spotify.com/embed/track/${location.spotify_track_id}?theme=0`}
-                width="100%"
-                height="80"
-                frameBorder="0"
-                allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-                loading="lazy"
-                title={`Spotify: ${location.name}`}
-                className="rounded-xl"
-              />
-            )}
           </div>
         )}
 
