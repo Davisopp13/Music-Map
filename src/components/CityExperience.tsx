@@ -1,13 +1,21 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
-import type { CityData } from "@/lib/types";
+import { useMemo, useState } from "react";
+import Link from "next/link";
+import type { City, CityData } from "@/lib/types";
 import CityMap from "./CityMap";
 import StoryCard from "./StoryCard";
 import TrailBar from "./TrailBar";
 
-export default function CityExperience({ data }: { data: CityData }) {
+export default function CityExperience({
+  data,
+  cities,
+}: {
+  data: CityData;
+  cities: City[];
+}) {
   const { city, locations, trails } = data;
+  const otherCities = cities.filter((c) => c.id !== city.id);
   const trail = trails[0] ?? null;
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -30,39 +38,34 @@ export default function CityExperience({ data }: { data: CityData }) {
       ? currentStop
       : null;
 
-  const selectPin = useCallback(
-    (id: string) => {
-      setSelectedId(id);
-      if (trailActive) {
-        const i = stops.findIndex((s) => s.location_id === id);
-        if (i >= 0) setStopIndex(i);
-      }
-    },
-    [trailActive, stops]
-  );
+  // Plain functions: the React Compiler memoizes these automatically.
+  const selectPin = (id: string) => {
+    setSelectedId(id);
+    if (trailActive) {
+      const i = stops.findIndex((s) => s.location_id === id);
+      if (i >= 0) setStopIndex(i);
+    }
+  };
 
-  const goToStop = useCallback(
-    (i: number) => {
-      const stop = stops[i];
-      if (!stop) return;
-      setStopIndex(i);
-      setSelectedId(stop.location_id);
-    },
-    [stops]
-  );
+  const goToStop = (i: number) => {
+    const stop = stops[i];
+    if (!stop) return;
+    setStopIndex(i);
+    setSelectedId(stop.location_id);
+  };
 
-  const startTrail = useCallback(() => {
+  const startTrail = () => {
     setTrailActive(true);
     const first = stops[0];
     if (first) {
       setStopIndex(0);
       setSelectedId(first.location_id);
     }
-  }, [stops]);
+  };
 
-  const exitTrail = useCallback(() => {
+  const exitTrail = () => {
     setTrailActive(false);
-  }, []);
+  };
 
   return (
     <div className="relative h-dvh w-full overflow-hidden bg-background">
@@ -88,6 +91,19 @@ export default function CityExperience({ data }: { data: CityData }) {
             </span>
           )}
         </h1>
+        {otherCities.length > 0 && (
+          <nav className="pointer-events-auto mt-1.5 flex flex-wrap gap-1.5">
+            {otherCities.map((c) => (
+              <Link
+                key={c.id}
+                href={`/${c.slug}`}
+                className="rounded-full border border-paper-edge bg-paper/90 px-2.5 py-1 text-[11px] font-medium tracking-wide text-ink-soft shadow-sm transition-colors hover:text-foreground"
+              >
+                {c.name} {c.state} →
+              </Link>
+            ))}
+          </nav>
+        )}
       </header>
 
       {selected && (

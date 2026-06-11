@@ -7,6 +7,20 @@ const key =
   process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
+export async function getCities(): Promise<City[]> {
+  if (!url || !key) {
+    const local = localCityData("bristol");
+    return local ? [local.city] : [];
+  }
+  const supabase = createClient(url, key);
+  const { data, error } = await supabase
+    .from("cities")
+    .select("*")
+    .order("sort_order");
+  if (error) throw error;
+  return (data ?? []) as City[];
+}
+
 export async function getCityData(slug: string): Promise<CityData | null> {
   if (!url || !key) {
     console.warn(
