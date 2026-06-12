@@ -128,29 +128,31 @@ export default function CityExperience({
         trailStopIndex={stopIndex}
       />
 
-      {/* Masthead */}
+      {/* Masthead — a Hatch poster lockup, not a page title */}
       <header className="pointer-events-none absolute left-0 right-0 top-0 z-20 bg-gradient-to-b from-background/95 via-background/70 to-transparent px-4 pb-8 pt-[max(0.75rem,env(safe-area-inset-top))]">
         <Link
           href="/"
-          className="pointer-events-auto inline-block text-[11px] font-medium uppercase tracking-[0.22em] text-ink-soft transition-colors hover:text-foreground"
+          className="pointer-events-auto inline-block font-poster text-[11px] font-medium uppercase tracking-[0.22em] text-ink-soft transition-colors hover:text-foreground"
         >
           ← All cities
         </Link>
-        <h1 className="font-display text-2xl font-semibold leading-tight">
+        <h1 className="font-poster text-[34px] font-semibold uppercase leading-[0.95] tracking-[0.04em] md:text-[40px]">
           {city.name}
-          {city.state && (
-            <span className="ml-2 align-middle text-sm font-normal tracking-wide text-ink-soft">
-              {city.state}
-            </span>
-          )}
         </h1>
+        {city.state && (
+          <p className="mt-1 flex items-center gap-2 font-poster text-[11px] font-medium uppercase tracking-[0.4em] text-accent-rust">
+            <span className="h-px w-7 bg-accent-rust/60" aria-hidden />
+            <span>✦&ensp;{city.state}&ensp;✦</span>
+            <span className="h-px w-7 bg-accent-rust/60" aria-hidden />
+          </p>
+        )}
         {otherCities.length > 0 && (
-          <nav className="pointer-events-auto mt-1.5 flex flex-wrap gap-1.5">
+          <nav className="pointer-events-auto mt-2 flex flex-wrap gap-1.5">
             {otherCities.map((c) => (
               <Link
                 key={c.id}
                 href={`/${c.slug}`}
-                className="rounded-full border border-paper-edge bg-paper/90 px-2.5 py-1 text-[11px] font-medium tracking-wide text-ink-soft shadow-sm transition-colors hover:text-foreground"
+                className="rounded-[3px] border border-foreground/45 bg-paper/90 px-2.5 py-1 font-poster text-[10.5px] font-medium uppercase tracking-[0.14em] text-ink-soft shadow-sm transition-colors hover:border-foreground/70 hover:text-foreground"
               >
                 {c.name} {c.state} →
               </Link>

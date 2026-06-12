@@ -13,7 +13,9 @@ import {
   inkLine,
   lineFeature,
 } from "@/lib/ink-lines";
+import { grooveFeatures, PATCH_GROOVE } from "@/lib/grooves";
 import { PIN_TYPES } from "@/lib/pin-types";
+import CompassRose from "./CompassRose";
 import type { City, Connection, Location } from "@/lib/types";
 
 // Below this zoom the cover shows city medallions only; past it the
@@ -87,6 +89,29 @@ export default function OverviewMap({
     // along them — the atlas's Indiana Jones moment.
     let stopArcDashes = () => {};
     map.on("load", () => {
+      // Four records lying on a table: a small groove pressing under each
+      // city medallion.
+      map.addSource("grooves", {
+        type: "geojson",
+        data: grooveFeatures(
+          cities.map((c) => [c.center_lng, c.center_lat]),
+          PATCH_GROOVE
+        ),
+      });
+      map.addLayer(
+        {
+          id: "grooves",
+          type: "line",
+          source: "grooves",
+          paint: {
+            "line-color": "#6b5a40",
+            "line-width": 1,
+            "line-opacity": ["get", "o"],
+          },
+        },
+        "building"
+      );
+
       const arcs = connections
         .filter((c) => c.from.city_id !== c.to.city_id)
         .map((c) =>
@@ -174,6 +199,7 @@ export default function OverviewMap({
   return (
     <div className="absolute inset-0">
       <div ref={containerRef} className="h-full w-full" />
+      <CompassRose className="pointer-events-none absolute right-3 top-[max(0.9rem,env(safe-area-inset-top))] z-10 opacity-80" />
       {pinEls &&
         locations.map((loc) => {
           const el = pinEls.get(loc.id);
@@ -243,10 +269,13 @@ function OverviewPin({
   return (
     <span
       title={location.name}
-      className={`block h-3 w-3 rounded-full border border-paper shadow-[0_1px_3px_rgba(43,38,32,0.4)] transition-opacity duration-700 ${
+      className={`block h-3.5 w-3.5 rounded-full border border-paper shadow-[0_1px_3px_rgba(43,38,32,0.4)] transition-opacity duration-700 ${
         visible ? "opacity-100" : "opacity-0"
       }`}
-      style={{ background: cfg.color }}
+      // a 45 in miniature: colored label, vinyl rim
+      style={{
+        background: `radial-gradient(circle, ${cfg.color} 0 42%, #241f19 46%)`,
+      }}
     />
   );
 }

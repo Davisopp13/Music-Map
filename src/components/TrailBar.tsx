@@ -35,16 +35,19 @@ export default function TrailBar({
           cardOpen ? "hidden md:flex" : "flex"
         }`}
       >
+        {/* poster language: cream card, ink border, wood type */}
         <button
           onClick={onStart}
-          className="flex items-center gap-2.5 rounded-full bg-foreground py-3 pl-4 pr-5 text-paper shadow-[0_4px_20px_rgba(43,38,32,0.45)] transition-transform active:scale-95"
+          className="flex items-center gap-2.5 rounded-md border-2 border-foreground bg-paper py-2.5 pl-4 pr-5 text-foreground shadow-[0_4px_20px_rgba(43,38,32,0.35)] transition-transform active:scale-95"
         >
-          <Route size={18} />
+          <Route size={18} className="text-accent-rust" />
           <span className="text-left leading-tight">
-            <span className="block text-[10px] font-semibold uppercase tracking-[0.18em] opacity-70">
+            <span className="block font-poster text-[10px] font-semibold uppercase tracking-[0.2em] text-accent-rust">
               Walk the trail
             </span>
-            <span className="block text-sm font-medium">{trail.name}</span>
+            <span className="block font-poster text-sm font-medium uppercase tracking-[0.05em]">
+              {trail.name}
+            </span>
           </span>
         </button>
       </div>

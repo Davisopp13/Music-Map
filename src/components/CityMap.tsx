@@ -15,6 +15,8 @@ import {
   STATIC_DASH,
   type LngLat,
 } from "@/lib/ink-lines";
+import { CITY_GROOVE, grooveFeatures } from "@/lib/grooves";
+import CompassRose from "./CompassRose";
 import { PIN_TYPES } from "@/lib/pin-types";
 import type {
   City,
@@ -26,6 +28,8 @@ import type {
 
 const INK_TRAIL = "#473a2b";
 const INK_THREAD = "#6b4e36";
+// faded mustard, the gig-poster's second ink — district stamps
+const INK_MUSTARD = "#9c7820";
 
 const EMPTY_FC = featureCollection([]);
 
@@ -119,6 +123,26 @@ export default function CityMap({
       onDeselectRef.current();
     });
     map.on("load", () => {
+      // The groove: the whole city pressed into a record. Real geometry
+      // centered on the city, under the roads — subliminal until noticed.
+      map.addSource("grooves", {
+        type: "geojson",
+        data: grooveFeatures([[city.center_lng, city.center_lat]], CITY_GROOVE),
+      });
+      map.addLayer(
+        {
+          id: "grooves",
+          type: "line",
+          source: "grooves",
+          paint: {
+            "line-color": "#6b5a40",
+            "line-width": 1,
+            "line-opacity": ["get", "o"],
+          },
+        },
+        "building"
+      );
+
       // District watercolors: soft washes under the roads. The blurred
       // wide outline is what sells the wet-paint edge — a crisp polygon
       // would read as data, not pigment.
@@ -141,7 +165,7 @@ export default function CityMap({
             source: "districts",
             paint: {
               "fill-color": ["get", "color"],
-              "fill-opacity": 0.13,
+              "fill-opacity": 0.22,
               "fill-antialias": false,
             },
           },
@@ -156,27 +180,81 @@ export default function CityMap({
               "line-color": ["get", "color"],
               "line-width": 14,
               "line-blur": 12,
-              "line-opacity": 0.18,
+              "line-opacity": 0.26,
             },
           },
           beforeId
         );
+        // District names stamped in wood type — sections of the gig poster.
+        // Added last so they win symbol collisions against basemap labels.
+        map.addSource("district-labels", {
+          type: "geojson",
+          data: featureCollection(
+            districts.map((d) => {
+              // centroid of the outer ring (good enough for these blobs)
+              const ring = d.geojson.coordinates[0].slice(0, -1);
+              const [cx, cy] = ring
+                .reduce(([x, y], [px, py]) => [x + px, y + py], [0, 0])
+                .map((v) => v / ring.length);
+              return {
+                type: "Feature" as const,
+                properties: { name: d.name },
+                geometry: { type: "Point" as const, coordinates: [cx, cy] },
+              };
+            })
+          ),
+        });
+        map.addLayer({
+          id: "district-labels",
+          type: "symbol",
+          source: "district-labels",
+          minzoom: 11.2,
+          layout: {
+            "text-field": ["get", "name"],
+            "text-font": ["Oswald SemiBold"],
+            "text-transform": "uppercase",
+            "text-letter-spacing": 0.3,
+            "text-size": ["interpolate", ["linear"], ["zoom"], 11.2, 12, 14.5, 19],
+            "text-padding": 8,
+          },
+          paint: {
+            "text-color": INK_MUSTARD,
+            "text-halo-color": "#f4eee1",
+            "text-halo-width": 1.1,
+            "text-opacity": 0.95,
+          },
+        });
       }
 
-      // Trail route: the journal's pen line, revealed stop by stop.
+      // Trail route: a musical staff — five thin ink lines sharing one
+      // sketched path, revealed stop by stop. All five layers read from the
+      // same source, so the draw/retract animation moves the whole staff.
+      // Zoomed way out the outer lines fade and the middle line fattens
+      // back into the single pen stroke (legibility beats cleverness).
       map.addSource("trail-route", { type: "geojson", data: EMPTY_FC });
-      map.addLayer({
-        id: "trail-route-line",
-        type: "line",
-        source: "trail-route",
-        layout: { "line-cap": "round", "line-join": "round" },
-        paint: {
-          "line-color": INK_TRAIL,
-          "line-width": 2.6,
-          "line-opacity": 0.8,
-          "line-dasharray": [2.4, 1.7],
-        },
-      });
+      for (const k of [-2, -1, 0, 1, 2]) {
+        map.addLayer({
+          id: `trail-staff-${k + 2}`,
+          type: "line",
+          source: "trail-route",
+          layout: { "line-cap": "round", "line-join": "round" },
+          paint: {
+            "line-color": INK_TRAIL,
+            "line-width":
+              k === 0
+                ? ["interpolate", ["linear"], ["zoom"], 10.5, 2.4, 12, 0.9]
+                : 0.9,
+            "line-opacity":
+              k === 0
+                ? 0.85
+                : ["interpolate", ["linear"], ["zoom"], 11, 0, 11.8, 0.8],
+            "line-offset": [
+              "interpolate", ["linear"], ["zoom"],
+              11, 0, 12, k * 1.7, 16, k * 2.4,
+            ],
+          },
+        });
+      }
       // Story threads: stitches that flow from the open pin outward.
       map.addSource("threads", { type: "geojson", data: EMPTY_FC });
       map.addLayer({
@@ -450,9 +528,12 @@ export default function CityMap({
     return new Map(trailStops.map((s) => [s.location_id, s.stop_order]));
   }, [trailStops]);
 
+  const currentStopLocationId = trailStops?.[trailStopIndex]?.location_id ?? null;
+
   return (
     <div className="absolute inset-0">
       <div ref={containerRef} className="h-full w-full" />
+      <CompassRose className="pointer-events-none absolute right-3 top-[max(0.9rem,env(safe-area-inset-top))] z-10 opacity-80" />
       {markerEls &&
         locations.map((loc) => {
           const el = markerEls.get(loc.id);
@@ -464,6 +545,7 @@ export default function CityMap({
               selected={loc.id === selectedId}
               rippling={loc.id === ripplingId}
               stopNumber={stopNumber}
+              currentStop={loc.id === currentStopLocationId}
               dimmed={stopNumberByLocation !== null && stopNumber === null}
             />,
             el,
@@ -489,12 +571,14 @@ function PinMarker({
   selected,
   rippling,
   stopNumber,
+  currentStop,
   dimmed,
 }: {
   location: Location;
   selected: boolean;
   rippling: boolean;
   stopNumber: number | null;
+  currentStop: boolean;
   dimmed: boolean;
 }) {
   const cfg = PIN_TYPES[location.pin_type];
@@ -516,7 +600,7 @@ function PinMarker({
       } ${selected ? "scale-110" : ""}`}
       title={location.name}
     >
-      {/* Invisible tap target: the 36px pin alone is under the 44-48px
+      {/* Invisible tap target: the 38px pin alone is under the 44-48px
           touch minimum, so pad the hit area to 52px on touch screens. */}
       <span className="absolute hidden pointer-coarse:-inset-2 pointer-coarse:block" />
       {rippling && (
@@ -528,23 +612,50 @@ function PinMarker({
         </span>
       )}
       {location.is_orbit && (
+        // the dust sleeve: orbit pins ship in protective packaging
         <span
           className="absolute -inset-[7px] rounded-full border-2 border-dashed"
           style={{ borderColor: cfg.color }}
         />
       )}
+      {/* A 45: dark vinyl, pressed grooves, the pin_type color as the
+          center label. The open pin's record turns; while its track is
+          actually sounding the spin gains a wobble — the spin IS the
+          now-playing state. */}
       <div
-        className="flex h-9 w-9 items-center justify-center rounded-full border-2 shadow-[0_2px_6px_rgba(43,38,32,0.4)]"
-        style={{
-          background: cfg.color,
-          borderColor: selected ? "#2b2620" : "#faf5ea",
-        }}
+        className={`record-45 flex h-[38px] w-[38px] items-center justify-center rounded-full border-2 shadow-[0_2px_6px_rgba(43,38,32,0.4)] ${
+          selected ? "record-spinning" : ""
+        } ${rippling ? "record-sounding" : ""}`}
+        style={{ borderColor: selected ? "#2b2620" : "#faf5ea" }}
       >
-        <Icon size={18} color="#faf5ea" strokeWidth={2.2} />
+        <span
+          className="flex h-5 w-5 items-center justify-center rounded-full"
+          style={{ background: cfg.color }}
+        >
+          <Icon size={11} color="#faf5ea" strokeWidth={2.6} />
+        </span>
       </div>
       {stopNumber !== null && (
-        <span className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full border border-paper bg-foreground text-[11px] font-bold leading-none text-paper">
-          {stopNumber}
+        // trail stops are note heads — filled, tilted, numbered; the
+        // current stop sings in rust
+        <span
+          className={`absolute -right-2.5 -top-2 transition-transform duration-200 ${
+            currentStop ? "scale-125" : ""
+          }`}
+        >
+          <span
+            className={`absolute -top-[7px] right-0 h-2.5 w-[2px] rounded-full ${
+              currentStop ? "bg-accent-rust" : "bg-foreground"
+            }`}
+            aria-hidden
+          />
+          <span
+            className={`flex h-[17px] w-[21px] -rotate-12 items-center justify-center rounded-[50%] border border-paper text-[11px] font-bold leading-none text-paper ${
+              currentStop ? "bg-accent-rust" : "bg-foreground"
+            }`}
+          >
+            {stopNumber}
+          </span>
         </span>
       )}
     </div>

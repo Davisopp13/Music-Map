@@ -8,6 +8,9 @@
   --paper-edge: #d9cdb4;
   --ink-soft: #6d6258;
   --accent: #9b2c2c;
+  /* Poster inks — used sparingly but confidently */
+  --accent-rust: #a8431f;
+  --accent-mustard: #b3872a;
 }
 
 @theme inline {
@@ -17,9 +20,12 @@
   --color-paper-edge: var(--paper-edge);
   --color-ink-soft: var(--ink-soft);
   --color-accent: var(--accent);
+  --color-accent-rust: var(--accent-rust);
+  --color-accent-mustard: var(--accent-mustard);
   --font-sans: var(--font-geist-sans);
   --font-display: var(--font-fraunces);
   --font-serif: var(--font-lora);
+  --font-poster: var(--font-oswald);
 }
 
 body {
@@ -28,9 +34,29 @@ body {
   font-family: var(--font-geist-sans), system-ui, sans-serif;
 }
 
+/* Map chrome speaks the paper/ink language, not default-white UI */
 .maplibregl-ctrl-attrib {
   font-size: 10px;
-  background: rgba(250, 245, 234, 0.75) !important;
+  font-family: var(--font-lora), Georgia, serif;
+  color: var(--ink-soft);
+  background: rgba(250, 245, 234, 0.85) !important;
+  border-radius: 4px;
+}
+.maplibregl-ctrl-attrib a {
+  color: var(--ink-soft);
+}
+.maplibregl-ctrl-group {
+  background: var(--paper) !important;
+  border: 1px solid rgba(43, 38, 32, 0.45);
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(43, 38, 32, 0.25) !important;
+  overflow: hidden;
+}
+.maplibregl-ctrl-group button {
+  background: transparent !important;
+}
+.maplibregl-ctrl-group button + button {
+  border-top: 1px solid rgba(43, 38, 32, 0.18) !important;
 }
 
 /* Story card markdown */
@@ -62,6 +88,55 @@ body {
 .vinyl {
   background: radial-gradient(circle, #3a332a 0 18%, transparent 18%),
     repeating-radial-gradient(circle, #2b2620 0 1.5px, #38322a 1.5px 3px);
+}
+
+/* 45rpm pin: dark vinyl with pressed grooves and a soft off-center sheen.
+   The sheen lives on the disc itself, so when the disc spins the light
+   sweeps around it. */
+.record-45 {
+  background:
+    radial-gradient(
+      circle at 32% 28%,
+      rgba(250, 245, 234, 0.16),
+      rgba(250, 245, 234, 0) 46%
+    ),
+    repeating-radial-gradient(circle, #241f19 0 1.6px, #363026 1.6px 3.2px);
+}
+.record-spinning {
+  animation: record-spin 6s linear infinite;
+}
+/* needle's down: keep turning, add the warp of a well-loved pressing */
+.record-spinning.record-sounding {
+  animation: record-spin-wobble 6s linear infinite;
+}
+@keyframes record-spin {
+  to {
+    transform: rotate(1turn);
+  }
+}
+@keyframes record-spin-wobble {
+  0% {
+    transform: rotate(0turn) scale(1);
+  }
+  25% {
+    transform: rotate(0.25turn) scale(1.05);
+  }
+  50% {
+    transform: rotate(0.5turn) scale(1);
+  }
+  75% {
+    transform: rotate(0.75turn) scale(1.05);
+  }
+  100% {
+    transform: rotate(1turn) scale(1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .record-spinning,
+  .record-spinning.record-sounding {
+    /* static highlight instead: the selected ink border + scale carry it */
+    animation: none;
+  }
 }
 
 /* Little stitched-line ornament on thread chips */
