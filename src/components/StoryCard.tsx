@@ -14,6 +14,14 @@ import {
 import { PIN_TYPES } from "@/lib/pin-types";
 import type { City, Connection, Location, TrailStop } from "@/lib/types";
 
+// Story links (museum sites etc.) must open in the browser, not hijack the
+// standalone PWA window — markdown gives us bare <a> tags otherwise.
+const mdComponents = {
+  a: (props: React.ComponentProps<"a">) => (
+    <a {...props} target="_blank" rel="noreferrer" />
+  ),
+};
+
 interface StoryCardProps {
   location: Location;
   city: City;
@@ -149,14 +157,14 @@ export default function StoryCard({
             </p>
             {stop.stop_note_md && (
               <div className="story-prose text-[15px]">
-                <ReactMarkdown>{stop.stop_note_md}</ReactMarkdown>
+                <ReactMarkdown components={mdComponents}>{stop.stop_note_md}</ReactMarkdown>
               </div>
             )}
           </div>
         )}
 
         <div className="story-prose mt-4">
-          <ReactMarkdown>{location.story_md}</ReactMarkdown>
+          <ReactMarkdown components={mdComponents}>{location.story_md}</ReactMarkdown>
         </div>
 
         {connections.length > 0 && (
@@ -204,7 +212,7 @@ export default function StoryCard({
                     {open && (
                       <div className="px-3 pb-3">
                         <div className="story-prose text-[14px]">
-                          <ReactMarkdown>{conn.relationship_md}</ReactMarkdown>
+                          <ReactMarkdown components={mdComponents}>{conn.relationship_md}</ReactMarkdown>
                         </div>
                         <button
                           onClick={() => onThreadGo(conn)}

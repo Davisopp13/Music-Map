@@ -1,5 +1,6 @@
 import { getOverviewData } from "@/lib/data";
 import OverviewMap from "@/components/OverviewMap";
+import InstallPrompt from "@/components/InstallPrompt";
 
 // Content lives in Supabase — render live so new cities and pins appear
 // on refresh without a redeploy.
@@ -28,6 +29,9 @@ export default async function OverviewPage() {
           Pick a city to open its chapter.
         </p>
       </header>
+
+      {/* quiet corner affordance; hides itself when already installed */}
+      <InstallPrompt />
     </div>
   );
 }
