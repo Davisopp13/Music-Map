@@ -1,13 +1,28 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import ReactMarkdown from "react-markdown";
-import { Compass, ExternalLink, MapPin, Music2, X } from "lucide-react";
+import {
+  ArrowRight,
+  Compass,
+  ExternalLink,
+  MapPin,
+  Music2,
+  Spline,
+  X,
+} from "lucide-react";
 import { PIN_TYPES } from "@/lib/pin-types";
-import type { City, Location, TrailStop } from "@/lib/types";
+import type { City, Connection, Location, TrailStop } from "@/lib/types";
 
 interface StoryCardProps {
   location: Location;
   city: City;
+  cities: City[];
+  connections: Connection[]; // threads touching this pin
+  openThreadId: string | null;
+  onThreadToggle: (id: string) => void;
+  onThreadGo: (conn: Connection) => void;
+  onSpotifyEngage: () => void; // user tapped into the embed — needle drops
   stop: TrailStop | null; // set when this card is the current trail stop
   stopCount: number;
   trailName: string | null;
@@ -18,6 +33,12 @@ interface StoryCardProps {
 export default function StoryCard({
   location,
   city,
+  cities,
+  connections,
+  openThreadId,
+  onThreadToggle,
+  onThreadGo,
+  onSpotifyEngage,
   stop,
   stopCount,
   trailName,
@@ -26,6 +47,23 @@ export default function StoryCard({
 }: StoryCardProps) {
   const cfg = PIN_TYPES[location.pin_type];
   const TypeIcon = cfg.icon;
+
+  // Spotify's embed gives no playback events cross-origin; the accepted
+  // heuristic is "the user clicked into the iframe" — window blurs and the
+  // iframe becomes the active element.
+  const spotifyRef = useRef<HTMLIFrameElement>(null);
+  const onEngageRef = useRef(onSpotifyEngage);
+  useEffect(() => {
+    onEngageRef.current = onSpotifyEngage;
+  });
+  useEffect(() => {
+    const onBlur = () => {
+      if (spotifyRef.current && document.activeElement === spotifyRef.current)
+        onEngageRef.current();
+    };
+    window.addEventListener("blur", onBlur);
+    return () => window.removeEventListener("blur", onBlur);
+  }, [location.id]);
 
   return (
     <aside
@@ -67,6 +105,7 @@ export default function StoryCard({
         {location.spotify_track_id && (
           <div className="mt-4">
             <iframe
+              ref={spotifyRef}
               src={`https://open.spotify.com/embed/track/${location.spotify_track_id}?theme=0`}
               width="100%"
               height="80"
@@ -119,6 +158,69 @@ export default function StoryCard({
         <div className="story-prose mt-4">
           <ReactMarkdown>{location.story_md}</ReactMarkdown>
         </div>
+
+        {connections.length > 0 && (
+          <div className="mt-5 border-t border-paper-edge pt-4">
+            <p className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-ink-soft">
+              <Spline size={13} />
+              Threads
+            </p>
+            <div className="flex flex-col gap-1.5">
+              {connections.map((conn) => {
+                const other =
+                  conn.from.id === location.id ? conn.to : conn.from;
+                const otherCity =
+                  other.city_id !== city.id
+                    ? cities.find((c) => c.id === other.city_id)
+                    : null;
+                const open = openThreadId === conn.id;
+                return (
+                  <div
+                    key={conn.id}
+                    className={`rounded-lg border transition-colors ${
+                      open
+                        ? "border-paper-edge bg-background"
+                        : "border-transparent"
+                    }`}
+                  >
+                    <button
+                      onClick={() => onThreadToggle(conn.id)}
+                      className={`flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[13.5px] font-medium transition-colors ${
+                        open
+                          ? "text-foreground"
+                          : "bg-background/60 text-ink-soft hover:text-foreground"
+                      }`}
+                    >
+                      <span className="thread-stitch shrink-0" aria-hidden />
+                      <span className="min-w-0 flex-1 truncate">
+                        {other.name}
+                        {otherCity && (
+                          <span className="ml-1.5 text-[11px] font-semibold uppercase tracking-wider text-accent">
+                            {otherCity.name}
+                          </span>
+                        )}
+                      </span>
+                    </button>
+                    {open && (
+                      <div className="px-3 pb-3">
+                        <div className="story-prose text-[14px]">
+                          <ReactMarkdown>{conn.relationship_md}</ReactMarkdown>
+                        </div>
+                        <button
+                          onClick={() => onThreadGo(conn)}
+                          className="mt-2.5 inline-flex items-center gap-1.5 rounded-full bg-foreground px-3.5 py-1.5 text-[12px] font-semibold text-paper transition-transform active:scale-95"
+                        >
+                          Go to pin
+                          <ArrowRight size={13} />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {location.what_is_there_now && (
           <div className="mt-5 rounded-lg bg-background p-4">

@@ -2,11 +2,15 @@
 
 Parked per scope rules in CLAUDE.md.
 
+Shipped since this list was written: connection threads on the city map,
+inter-city stub arrows + overview arcs, animated trail routes, district
+watercolors, needle-drop ripple, ambient turntable (the map overhaul).
+
 - Time scrubber UI (schema ready via `era_start` / `era_end`)
-- Connection lines on the map (4 connections seeded; `connections` table)
-- Long threads on overview map (inter-city connections — Atlanta↔Bristol,
-  Peacock↔Douglass — data exists, rendering is V2)
-- Other cities: Macon, Atlanta, Nashville, NYC, Laurel Canyon, Austin
+- Era-reactive map aging — ships WITH the time scrubber: scrubber ages the
+  basemap: sepia/sparse in 1920s position, color and interstates seep in
+  toward today
+- Other cities: NYC, Laurel Canyon, Austin
 - "Standing here" geolocation mode
 - Personal pins layer / auth
 - CMS or admin for content edits

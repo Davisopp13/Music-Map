@@ -5,9 +5,16 @@ import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
-import { BASEMAP_STYLE } from "@/lib/basemap";
+import { basemapStyle } from "@/lib/basemap";
+import {
+  animateDashes,
+  featureCollection,
+  hashSeed,
+  inkLine,
+  lineFeature,
+} from "@/lib/ink-lines";
 import { PIN_TYPES } from "@/lib/pin-types";
-import type { City, Location } from "@/lib/types";
+import type { City, Connection, Location } from "@/lib/types";
 
 // Below this zoom the cover shows city medallions only; past it the
 // nearby city's individual pins fade in so free-zooming feels continuous.
@@ -16,9 +23,14 @@ const PIN_FADE_ZOOM = 8.5;
 interface OverviewMapProps {
   cities: City[];
   locations: Location[];
+  connections: Connection[];
 }
 
-export default function OverviewMap({ cities, locations }: OverviewMapProps) {
+export default function OverviewMap({
+  cities,
+  locations,
+  connections,
+}: OverviewMapProps) {
   const router = useRouter();
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
@@ -44,7 +56,7 @@ export default function OverviewMap({ cities, locations }: OverviewMapProps) {
 
     const map = new maplibregl.Map({
       container: containerRef.current,
-      style: BASEMAP_STYLE,
+      style: basemapStyle(),
       center: [cities[0]?.center_lng ?? -84, cities[0]?.center_lat ?? 35],
       zoom: 5,
       attributionControl: { compact: true },
@@ -71,6 +83,42 @@ export default function OverviewMap({ cities, locations }: OverviewMapProps) {
 
     map.on("zoom", () => setPinsVisible(map.getZoom() >= PIN_FADE_ZOOM));
 
+    // The long threads: gentle ink arcs between cities, dashes drifting
+    // along them — the atlas's Indiana Jones moment.
+    let stopArcDashes = () => {};
+    map.on("load", () => {
+      const arcs = connections
+        .filter((c) => c.from.city_id !== c.to.city_id)
+        .map((c) =>
+          lineFeature(
+            inkLine([c.from.lng, c.from.lat], [c.to.lng, c.to.lat], {
+              bow: 0.18,
+              jitter: 0.004,
+              steps: 64,
+              seed: hashSeed(c.id),
+            })
+          )
+        );
+      if (arcs.length === 0) return;
+      map.addSource("city-arcs", {
+        type: "geojson",
+        data: featureCollection(arcs),
+      });
+      map.addLayer({
+        id: "city-arcs-line",
+        type: "line",
+        source: "city-arcs",
+        layout: { "line-cap": "round", "line-join": "round" },
+        paint: {
+          "line-color": "#5a4633",
+          "line-width": 1.8,
+          "line-opacity": 0.55,
+          "line-dasharray": [3, 4],
+        },
+      });
+      stopArcDashes = animateDashes(map, "city-arcs-line", 2200);
+    });
+
     const cEls = new Map<string, HTMLDivElement>();
     for (const c of cities) {
       const el = document.createElement("div");
@@ -94,12 +142,13 @@ export default function OverviewMap({ cities, locations }: OverviewMapProps) {
     setPinEls(pEls);
 
     return () => {
+      stopArcDashes();
       setCityEls(null);
       setPinEls(null);
       map.remove();
       mapRef.current = null;
     };
-    // cities + locations are immutable for the life of the page
+    // cities + locations + connections are immutable for the life of the page
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

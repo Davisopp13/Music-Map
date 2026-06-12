@@ -6,11 +6,15 @@ import OverviewMap from "@/components/OverviewMap";
 export const dynamic = "force-dynamic";
 
 export default async function OverviewPage() {
-  const { cities, locations } = await getOverviewData();
+  const { cities, locations, connections } = await getOverviewData();
 
   return (
     <div className="relative h-dvh w-full overflow-hidden bg-background">
-      <OverviewMap cities={cities} locations={locations} />
+      <OverviewMap
+        cities={cities}
+        locations={locations}
+        connections={connections}
+      />
 
       {/* Masthead — the cover page of the atlas */}
       <header className="pointer-events-none absolute left-0 right-0 top-0 z-20 bg-gradient-to-b from-background/95 via-background/70 to-transparent px-4 pb-10 pt-[max(0.75rem,env(safe-area-inset-top))]">

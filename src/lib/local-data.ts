@@ -257,5 +257,7 @@ const trail: Trail = {
 
 export function localCityData(slug: string): CityData | null {
   if (slug !== city.slug) return null;
-  return { city, locations, trails: [trail] };
+  // connections + districts live only in the SQL seeds; those layers
+  // simply don't render offline
+  return { city, locations, trails: [trail], connections: [], districts: [] };
 }

@@ -14,7 +14,10 @@ shipping, not scale.
 ## Stack
 
 - Next.js (App Router), TypeScript, TailwindCSS
-- MapLibre GL JS (free, no token) with a clean basemap style
+- MapLibre GL JS (free, no token) with a fully custom "worn atlas" style
+  (`src/lib/basemap.ts`) over OpenFreeMap vector tiles; letterpress label
+  fonts are self-hosted glyph PBFs in `public/glyphs/` — regenerate with
+  `node scripts/build-glyphs.mjs`
 - Supabase (Postgres) — schema in `db/schema.sql`, seed in `db/seed_bristol.sql`
 - Deploy: Vercel
 - Icons: Lucide React
@@ -50,8 +53,6 @@ shipping, not scale.
 
 - Auth, user accounts, personal pins
 - Time scrubber (V2 — schema supports it via era_start/era_end, don’t build UI yet)
-- Connection lines on the map (V2 — data is seeded, rendering can wait)
-- Other cities
 - Mobile “standing here” geolocation mode
 - CMS/admin — content edits happen in seed SQL for now
 

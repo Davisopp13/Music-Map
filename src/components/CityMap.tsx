@@ -4,40 +4,91 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
-import { BASEMAP_STYLE } from "@/lib/basemap";
+import { basemapStyle } from "@/lib/basemap";
+import {
+  animateDashes,
+  featureCollection,
+  hashSeed,
+  inkLine,
+  lineFeature,
+  prefersReducedMotion,
+  STATIC_DASH,
+  type LngLat,
+} from "@/lib/ink-lines";
 import { PIN_TYPES } from "@/lib/pin-types";
-import type { City, Location, TrailStop } from "@/lib/types";
+import type {
+  City,
+  Connection,
+  District,
+  Location,
+  TrailStop,
+} from "@/lib/types";
+
+const INK_TRAIL = "#473a2b";
+const INK_THREAD = "#6b4e36";
+
+const EMPTY_FC = featureCollection([]);
 
 interface CityMapProps {
   city: City;
   locations: Location[];
+  connections: Connection[];
+  districts: District[];
+  cities: City[];
   selectedId: string | null;
   onSelect: (id: string) => void;
   onDeselect: () => void;
+  onThreadClick: (connectionId: string) => void;
+  ripplingId: string | null; // pin whose Spotify embed the user engaged
   trailStops: TrailStop[] | null;
+  trailStopIndex: number;
+}
+
+interface EdgeChip {
+  connId: string;
+  label: string;
+  x: number;
+  y: number;
 }
 
 export default function CityMap({
   city,
   locations,
+  connections,
+  districts,
+  cities,
   selectedId,
   onSelect,
   onDeselect,
+  onThreadClick,
+  ripplingId,
   trailStops,
+  trailStopIndex,
 }: CityMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const onSelectRef = useRef(onSelect);
   const onDeselectRef = useRef(onDeselect);
+  const onThreadClickRef = useRef(onThreadClick);
 
   useEffect(() => {
     onSelectRef.current = onSelect;
     onDeselectRef.current = onDeselect;
+    onThreadClickRef.current = onThreadClick;
   });
 
   // Marker DOM nodes, available once the map has mounted; portal targets.
   const [markerEls, setMarkerEls] = useState<Map<string, HTMLDivElement> | null>(
     null
+  );
+  // Map style finished loading — sources/layers exist, data effects may run.
+  const [mapReady, setMapReady] = useState(false);
+  // Inter-city thread labels pinned to the viewport edge ("→ Bristol").
+  const [edgeChips, setEdgeChips] = useState<EdgeChip[]>([]);
+
+  const locationById = useMemo(
+    () => new Map(locations.map((l) => [l.id, l])),
+    [locations]
   );
 
   useEffect(() => {
@@ -45,7 +96,7 @@ export default function CityMap({
 
     const map = new maplibregl.Map({
       container: containerRef.current,
-      style: BASEMAP_STYLE,
+      style: basemapStyle(),
       center: [city.center_lng, city.center_lat],
       zoom: city.default_zoom,
       attributionControl: { compact: true },
@@ -54,7 +105,107 @@ export default function CityMap({
       new maplibregl.NavigationControl({ showCompass: false }),
       "bottom-right"
     );
-    map.on("click", () => onDeselectRef.current());
+    map.on("click", (e) => {
+      // a tap on a stitched thread opens its note, not a deselect
+      if (map.getLayer("threads-hit")) {
+        const hits = map.queryRenderedFeatures(e.point, {
+          layers: ["threads-hit"],
+        });
+        if (hits.length > 0) {
+          onThreadClickRef.current(String(hits[0].properties?.connId));
+          return;
+        }
+      }
+      onDeselectRef.current();
+    });
+    map.on("load", () => {
+      // District watercolors: soft washes under the roads. The blurred
+      // wide outline is what sells the wet-paint edge — a crisp polygon
+      // would read as data, not pigment.
+      if (districts.length > 0) {
+        map.addSource("districts", {
+          type: "geojson",
+          data: featureCollection(
+            districts.map((d) => ({
+              type: "Feature" as const,
+              properties: { color: d.color, name: d.name },
+              geometry: d.geojson,
+            }))
+          ),
+        });
+        const beforeId = map.getLayer("building") ? "building" : undefined;
+        map.addLayer(
+          {
+            id: "districts-wash",
+            type: "fill",
+            source: "districts",
+            paint: {
+              "fill-color": ["get", "color"],
+              "fill-opacity": 0.13,
+              "fill-antialias": false,
+            },
+          },
+          beforeId
+        );
+        map.addLayer(
+          {
+            id: "districts-bleed",
+            type: "line",
+            source: "districts",
+            paint: {
+              "line-color": ["get", "color"],
+              "line-width": 14,
+              "line-blur": 12,
+              "line-opacity": 0.18,
+            },
+          },
+          beforeId
+        );
+      }
+
+      // Trail route: the journal's pen line, revealed stop by stop.
+      map.addSource("trail-route", { type: "geojson", data: EMPTY_FC });
+      map.addLayer({
+        id: "trail-route-line",
+        type: "line",
+        source: "trail-route",
+        layout: { "line-cap": "round", "line-join": "round" },
+        paint: {
+          "line-color": INK_TRAIL,
+          "line-width": 2.6,
+          "line-opacity": 0.8,
+          "line-dasharray": [2.4, 1.7],
+        },
+      });
+      // Story threads: stitches that flow from the open pin outward.
+      map.addSource("threads", { type: "geojson", data: EMPTY_FC });
+      map.addLayer({
+        id: "threads-line",
+        type: "line",
+        source: "threads",
+        layout: { "line-cap": "round", "line-join": "round" },
+        paint: {
+          "line-color": INK_THREAD,
+          "line-width": 2,
+          "line-opacity": 0.75,
+          "line-dasharray": STATIC_DASH,
+        },
+      });
+      // generous invisible hit area for fingers
+      map.addLayer({
+        id: "threads-hit",
+        type: "line",
+        source: "threads",
+        paint: { "line-width": 20, "line-opacity": 0 },
+      });
+      map.on("mouseenter", "threads-hit", () => {
+        map.getCanvas().style.cursor = "pointer";
+      });
+      map.on("mouseleave", "threads-hit", () => {
+        map.getCanvas().style.cursor = "";
+      });
+      setMapReady(true);
+    });
     mapRef.current = map;
 
     // Frame the walking cluster (orbit pins are off-map by design; the
@@ -86,6 +237,7 @@ export default function CityMap({
 
     return () => {
       setMarkerEls(null);
+      setMapReady(false);
       map.remove();
       mapRef.current = null;
     };
@@ -97,7 +249,7 @@ export default function CityMap({
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !selectedId) return;
-    const loc = locations.find((l) => l.id === selectedId);
+    const loc = locationById.get(selectedId);
     if (!loc) return;
 
     const isDesktop = window.innerWidth >= 768;
@@ -109,7 +261,189 @@ export default function CityMap({
       offset: isDesktop ? [-180, 0] : [0, -Math.round(window.innerHeight * 0.18)],
       speed: 1.4,
     });
-  }, [selectedId, locations]);
+  }, [selectedId, locationById]);
+
+  // ---- trail route: draws itself as the user advances -------------------
+
+  // One sketched polyline per consecutive stop pair, computed once.
+  const trailSegments = useMemo(() => {
+    if (!trailStops) return null;
+    const segs: LngLat[][] = [];
+    for (let i = 0; i < trailStops.length - 1; i++) {
+      const a = locationById.get(trailStops[i].location_id);
+      const b = locationById.get(trailStops[i + 1].location_id);
+      if (!a || !b) continue;
+      segs.push(
+        inkLine([a.lng, a.lat], [b.lng, b.lat], {
+          bow: 0.07,
+          jitter: 0.014,
+          steps: 22,
+          seed: hashSeed(`${trailStops[i].id}:${trailStops[i + 1].id}`),
+        })
+      );
+    }
+    return segs;
+  }, [trailStops, locationById]);
+
+  const trailProgressRef = useRef(0); // float stop index currently drawn
+  const trailRafRef = useRef(0);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapReady) return;
+    const source = map.getSource<maplibregl.GeoJSONSource>("trail-route");
+    if (!source) return;
+
+    if (!trailSegments) {
+      trailProgressRef.current = 0;
+      source.setData(EMPTY_FC);
+      return;
+    }
+
+    const coordsUpTo = (p: number): LngLat[] => {
+      const coords: LngLat[] = [];
+      const whole = Math.min(Math.floor(p), trailSegments.length);
+      for (let i = 0; i < whole; i++) coords.push(...trailSegments[i]);
+      const frac = p - whole;
+      if (frac > 0 && whole < trailSegments.length) {
+        const seg = trailSegments[whole];
+        const n = Math.floor(frac * (seg.length - 1));
+        coords.push(...seg.slice(0, n + 1));
+        const t = frac * (seg.length - 1) - n;
+        if (t > 0 && n + 1 < seg.length) {
+          const [x0, y0] = seg[n];
+          const [x1, y1] = seg[n + 1];
+          coords.push([x0 + (x1 - x0) * t, y0 + (y1 - y0) * t]);
+        }
+      }
+      return coords;
+    };
+
+    const render = (p: number) => {
+      const coords = coordsUpTo(p);
+      source.setData(
+        coords.length > 1 ? featureCollection([lineFeature(coords)]) : EMPTY_FC
+      );
+    };
+
+    const target = Math.min(trailStopIndex, trailSegments.length);
+    const from = trailProgressRef.current;
+    if (target === from) {
+      render(target);
+      return;
+    }
+    if (prefersReducedMotion()) {
+      trailProgressRef.current = target;
+      render(target);
+      return;
+    }
+
+    const duration = Math.min(1400, 800 * Math.abs(target - from));
+    const start = performance.now();
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - start) / duration);
+      const ease = t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2;
+      const p = from + (target - from) * ease;
+      trailProgressRef.current = p;
+      render(p);
+      if (t < 1) trailRafRef.current = requestAnimationFrame(tick);
+    };
+    trailRafRef.current = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(trailRafRef.current);
+  }, [trailSegments, trailStopIndex, mapReady]);
+
+  // ---- story threads: stitched lines from the open pin ------------------
+
+  const selectedThreads = useMemo(() => {
+    if (!selectedId) return [];
+    return connections
+      .filter((c) => c.from.id === selectedId || c.to.id === selectedId)
+      .map((c) => {
+        const origin = c.from.id === selectedId ? c.from : c.to;
+        const other = c.from.id === selectedId ? c.to : c.from;
+        return { conn: c, origin, other, sameCity: other.city_id === city.id };
+      });
+  }, [connections, selectedId, city.id]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapReady) return;
+    const source = map.getSource<maplibregl.GeoJSONSource>("threads");
+    if (!source) return;
+
+    // Lines always start at the open pin so the dashes flow outward.
+    source.setData(
+      selectedThreads.length === 0
+        ? EMPTY_FC
+        : featureCollection(
+            selectedThreads.map(({ conn, origin, other, sameCity }) =>
+              lineFeature(
+                inkLine([origin.lng, origin.lat], [other.lng, other.lat], {
+                  bow: sameCity ? 0.16 : 0.05,
+                  jitter: sameCity ? 0.015 : 0.006,
+                  steps: sameCity ? 24 : 48,
+                  seed: hashSeed(conn.id),
+                }),
+                { connId: conn.id }
+              )
+            )
+          )
+    );
+    const stopDashes =
+      selectedThreads.length > 0 ? animateDashes(map, "threads-line") : null;
+
+    // Inter-city threads get a chip where the line leaves the viewport.
+    const interCity = selectedThreads.filter((t) => !t.sameCity);
+    const cityName = (cityId: string) =>
+      cities.find((c) => c.id === cityId)?.name;
+    const updateChips = () => {
+      if (interCity.length === 0) {
+        setEdgeChips((cur) => (cur.length === 0 ? cur : []));
+        return;
+      }
+      const w = map.getContainer().clientWidth;
+      const h = map.getContainer().clientHeight;
+      const isDesktop = window.innerWidth >= 768;
+      const xMin = 60,
+        xMax = w - (isDesktop ? 460 : 60), // clear the desktop story card
+        yMin = 100,
+        yMax = h - 120; // clear masthead / trail bar
+      setEdgeChips(
+        interCity.map(({ conn, origin, other }) => {
+          const p0 = map.project([origin.lng, origin.lat]);
+          const p1 = map.project([other.lng, other.lat]);
+          const dx = p1.x - p0.x,
+            dy = p1.y - p0.y;
+          let t = 1;
+          if (dx > 0) t = Math.min(t, (xMax - p0.x) / dx);
+          else if (dx < 0) t = Math.min(t, (xMin - p0.x) / dx);
+          if (dy > 0) t = Math.min(t, (yMax - p0.y) / dy);
+          else if (dy < 0) t = Math.min(t, (yMin - p0.y) / dy);
+          t = Math.max(0.1, t);
+          const x = Math.min(xMax, Math.max(xMin, p0.x + dx * t));
+          const y = Math.min(yMax, Math.max(yMin, p0.y + dy * t));
+          return {
+            connId: conn.id,
+            label: cityName(other.city_id) ?? other.name,
+            x,
+            y,
+          };
+        })
+      );
+    };
+    // initial placement deferred a frame: chip positions come from the map,
+    // not React, so this isn't render-derived state
+    const raf = requestAnimationFrame(updateChips);
+    map.on("move", updateChips);
+
+    return () => {
+      cancelAnimationFrame(raf);
+      stopDashes?.();
+      map.off("move", updateChips);
+      if (map.getLayer("threads-line"))
+        map.setPaintProperty("threads-line", "line-dasharray", STATIC_DASH);
+    };
+  }, [selectedThreads, mapReady, cities]);
 
   const stopNumberByLocation = useMemo(() => {
     if (!trailStops) return null;
@@ -128,6 +462,7 @@ export default function CityMap({
             <PinMarker
               location={loc}
               selected={loc.id === selectedId}
+              rippling={loc.id === ripplingId}
               stopNumber={stopNumber}
               dimmed={stopNumberByLocation !== null && stopNumber === null}
             />,
@@ -135,6 +470,16 @@ export default function CityMap({
             loc.id
           );
         })}
+      {edgeChips.map((chip) => (
+        <button
+          key={chip.connId}
+          onClick={() => onThreadClick(chip.connId)}
+          className="absolute z-10 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded-full border border-foreground/50 bg-paper px-3 py-1.5 font-display text-[12px] font-semibold tracking-wide text-foreground shadow-[0_2px_10px_rgba(43,38,32,0.3)] transition-transform hover:scale-105"
+          style={{ left: chip.x, top: chip.y }}
+        >
+          → {chip.label}
+        </button>
+      ))}
     </div>
   );
 }
@@ -142,11 +487,13 @@ export default function CityMap({
 function PinMarker({
   location,
   selected,
+  rippling,
   stopNumber,
   dimmed,
 }: {
   location: Location;
   selected: boolean;
+  rippling: boolean;
   stopNumber: number | null;
   dimmed: boolean;
 }) {
@@ -169,6 +516,17 @@ function PinMarker({
       } ${selected ? "scale-110" : ""}`}
       title={location.name}
     >
+      {/* Invisible tap target: the 36px pin alone is under the 44-48px
+          touch minimum, so pad the hit area to 52px on touch screens. */}
+      <span className="absolute hidden pointer-coarse:-inset-2 pointer-coarse:block" />
+      {rippling && (
+        // the needle is down — this place is sounding
+        <span className="pointer-events-none absolute inset-0" aria-hidden>
+          <span className="needle-ripple" />
+          <span className="needle-ripple [animation-delay:1.33s]" />
+          <span className="needle-ripple [animation-delay:2.66s]" />
+        </span>
+      )}
       {location.is_orbit && (
         <span
           className="absolute -inset-[7px] rounded-full border-2 border-dashed"

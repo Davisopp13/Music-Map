@@ -8,7 +8,10 @@ import CityExperience from "@/components/CityExperience";
 // cities that didn't exist yet), so DB edits never reach the live site.
 export const dynamic = "force-dynamic";
 
-type Props = { params: Promise<{ citySlug: string }> };
+type Props = {
+  params: Promise<{ citySlug: string }>;
+  searchParams: Promise<{ pin?: string }>;
+};
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { citySlug } = await params;
@@ -20,9 +23,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default async function CityPage({ params }: Props) {
+export default async function CityPage({ params, searchParams }: Props) {
   const { citySlug } = await params;
-  const [data, cities] = await Promise.all([getCityData(citySlug), getCities()]);
+  const [{ pin }, data, cities] = await Promise.all([
+    searchParams,
+    getCityData(citySlug),
+    getCities(),
+  ]);
   if (!data) notFound();
-  return <CityExperience data={data} cities={cities} />;
+  // ?pin=slug opens a card on arrival — how inter-city threads land
+  return <CityExperience data={data} cities={cities} initialPinSlug={pin} />;
 }

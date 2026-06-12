@@ -40,6 +40,33 @@ export interface Location {
   sort_order: number;
 }
 
+// A named music district, washed onto the map like watercolor.
+export interface District {
+  id: string;
+  city_id: string;
+  name: string;
+  geojson: GeoJSON.Polygon;
+  color: string;
+}
+
+// A connection endpoint — just enough of the other pin to draw the thread
+// and label the chip, even when it lives in another city.
+export interface ConnectionPin {
+  id: string;
+  slug: string;
+  name: string;
+  lat: number;
+  lng: number;
+  city_id: string;
+}
+
+export interface Connection {
+  id: string;
+  relationship_md: string;
+  from: ConnectionPin;
+  to: ConnectionPin;
+}
+
 export interface TrailStop {
   id: string;
   trail_id: string;
@@ -62,4 +89,6 @@ export interface CityData {
   city: City;
   locations: Location[];
   trails: Trail[];
+  connections: Connection[];
+  districts: District[];
 }
