@@ -4,6 +4,8 @@ Parked per scope rules in CLAUDE.md.
 
 - Time scrubber UI (schema ready via `era_start` / `era_end`)
 - Connection lines on the map (4 connections seeded; `connections` table)
+- Long threads on overview map (inter-city connections — Atlanta↔Bristol,
+  Peacock↔Douglass — data exists, rendering is V2)
 - Other cities: Macon, Atlanta, Nashville, NYC, Laurel Canyon, Austin
 - "Standing here" geolocation mode
 - Personal pins layer / auth

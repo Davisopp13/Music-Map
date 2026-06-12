@@ -80,9 +80,12 @@ export default function CityExperience({
 
       {/* Masthead */}
       <header className="pointer-events-none absolute left-0 right-0 top-0 z-20 bg-gradient-to-b from-background/95 via-background/70 to-transparent px-4 pb-8 pt-[max(0.75rem,env(safe-area-inset-top))]">
-        <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-ink-soft">
-          Music History Map
-        </p>
+        <Link
+          href="/"
+          className="pointer-events-auto inline-block text-[11px] font-medium uppercase tracking-[0.22em] text-ink-soft transition-colors hover:text-foreground"
+        >
+          ← All cities
+        </Link>
         <h1 className="font-display text-2xl font-semibold leading-tight">
           {city.name}
           {city.state && (

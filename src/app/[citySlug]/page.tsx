@@ -3,6 +3,11 @@ import { notFound } from "next/navigation";
 import { getCities, getCityData } from "@/lib/data";
 import CityExperience from "@/components/CityExperience";
 
+// Content lives in Supabase and is edited there directly — without this,
+// Next statically caches each city on first visit (and caches the 404 for
+// cities that didn't exist yet), so DB edits never reach the live site.
+export const dynamic = "force-dynamic";
+
 type Props = { params: Promise<{ citySlug: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {

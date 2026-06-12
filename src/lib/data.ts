@@ -24,6 +24,31 @@ export async function getCities(): Promise<City[]> {
   return (data ?? []) as City[];
 }
 
+// Everything the overview map needs: every city plus every pin, so the
+// frame can fitBounds over actual pin coordinates rather than city centers.
+export async function getOverviewData(): Promise<{
+  cities: City[];
+  locations: Location[];
+}> {
+  if (!url || !key) {
+    const local = localCityData("bristol");
+    return local
+      ? { cities: [local.city], locations: local.locations }
+      : { cities: [], locations: [] };
+  }
+  const supabase = createClient(url, key);
+  const [citiesRes, locationsRes] = await Promise.all([
+    supabase.from("cities").select("*").order("sort_order"),
+    supabase.from("locations").select("*"),
+  ]);
+  if (citiesRes.error) throw citiesRes.error;
+  if (locationsRes.error) throw locationsRes.error;
+  return {
+    cities: (citiesRes.data ?? []) as City[],
+    locations: (locationsRes.data ?? []) as Location[],
+  };
+}
+
 export async function getCityData(slug: string): Promise<CityData | null> {
   if (!url || !key) {
     console.warn(

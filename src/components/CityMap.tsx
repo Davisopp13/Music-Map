@@ -4,29 +4,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
-import type { StyleSpecification } from "maplibre-gl";
+import { BASEMAP_STYLE } from "@/lib/basemap";
 import { PIN_TYPES } from "@/lib/pin-types";
 import type { City, Location, TrailStop } from "@/lib/types";
-
-// Carto Voyager raster tiles: free, no token, and the warmest of the
-// no-key basemaps. globals.css adds a sepia filter on the canvas to push
-// it the rest of the way toward "worn atlas".
-const BASEMAP_STYLE: StyleSpecification = {
-  version: 8,
-  sources: {
-    basemap: {
-      type: "raster",
-      tiles: ["a", "b", "c", "d"].map(
-        (s) =>
-          `https://${s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png`
-      ),
-      tileSize: 256,
-      attribution:
-        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-    },
-  },
-  layers: [{ id: "basemap", type: "raster", source: "basemap" }],
-};
 
 interface CityMapProps {
   city: City;
