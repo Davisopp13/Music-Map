@@ -111,7 +111,18 @@ export async function getCityData(slug: string): Promise<CityData | null> {
     ]);
   if (locationsRes.error) throw locationsRes.error;
   if (trailsRes.error) throw trailsRes.error;
-  if (districtsRes.error) throw districtsRes.error;
+  // Districts are a decorative, late-addition layer (db/update_09_districts.sql).
+  // If that migration hasn't been applied to this database, the city page must
+  // still load — the watercolor washes just don't render. Never let an optional
+  // layer 500 the whole chapter.
+  if (districtsRes.error) {
+    console.warn(
+      `[data] districts unavailable for "${slug}" — is db/update_09_districts.sql applied? ${districtsRes.error.message}`
+    );
+  }
+  const districts = districtsRes.error
+    ? []
+    : ((districtsRes.data ?? []) as District[]);
 
   const locations = (locationsRes.data ?? []) as Location[];
   const locationIds = new Set(locations.map((l) => l.id));
@@ -137,6 +148,6 @@ export async function getCityData(slug: string): Promise<CityData | null> {
     locations,
     trails,
     connections,
-    districts: (districtsRes.data ?? []) as District[],
+    districts,
   };
 }
