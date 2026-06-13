@@ -133,12 +133,19 @@ export default function StoryCard({
         )}
 
         {location.image_url && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={location.image_url}
-            alt={location.name}
-            className="mt-4 aspect-[3/2] w-full rounded-lg border border-paper-edge object-cover"
-          />
+          <figure className="mt-4">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={location.image_url}
+              alt={location.name}
+              className="aspect-[3/2] w-full rounded-lg border border-paper-edge object-cover"
+            />
+            {location.image_attribution && (
+              <figcaption className="mt-1.5 text-xs italic text-foreground/50">
+                {location.image_attribution}
+              </figcaption>
+            )}
+          </figure>
         )}
 
         {location.is_orbit && (

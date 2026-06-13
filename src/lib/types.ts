@@ -36,6 +36,7 @@ export interface Location {
   spotify_track_id: string | null;
   spotify_track_label: string | null;
   image_url: string | null;
+  image_attribution: string | null;
   is_orbit: boolean;
   sort_order: number;
 }

@@ -191,6 +191,7 @@ const locations: Location[] = pins.map((p, i) => ({
   spotify_track_id: null,
   spotify_track_label: p[10],
   image_url: null,
+  image_attribution: null,
   is_orbit: p[11],
   sort_order: i + 1,
 }));
