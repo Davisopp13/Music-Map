@@ -1,5 +1,5 @@
 -- =============================================================
--- UPDATE 09: Location images (Wikimedia Commons / LOC, licensed)
+-- UPDATE 10: Location images (Wikimedia Commons / LOC, licensed)
 -- Adds image_attribution column; sets image_url + attribution
 -- for 30 pins. Sources verified by Manus, triaged by hand.
 -- REJECTED (wrong subject, awaiting personal photos): Ernie Ford
