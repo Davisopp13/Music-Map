@@ -55,6 +55,7 @@ export default function OverviewMap({
 
   useEffect(() => {
     if (!containerRef.current) return;
+    let disposed = false;
 
     const map = new maplibregl.Map({
       container: containerRef.current,
@@ -83,12 +84,16 @@ export default function OverviewMap({
       });
     }
 
-    map.on("zoom", () => setPinsVisible(map.getZoom() >= PIN_FADE_ZOOM));
+    const onZoom = () => {
+      if (!disposed) setPinsVisible(map.getZoom() >= PIN_FADE_ZOOM);
+    };
+    map.on("zoom", onZoom);
 
     // The long threads: gentle ink arcs between cities, dashes drifting
     // along them — the atlas's Indiana Jones moment.
     let stopArcDashes = () => {};
-    map.on("load", () => {
+    const onLoad = () => {
+      if (disposed || mapRef.current !== map) return;
       // Four records lying on a table: a small groove pressing under each
       // city medallion.
       map.addSource("grooves", {
@@ -142,7 +147,8 @@ export default function OverviewMap({
         },
       });
       stopArcDashes = animateDashes(map, "city-arcs-line", 2200);
-    });
+    };
+    map.on("load", onLoad);
 
     const cEls = new Map<string, HTMLDivElement>();
     for (const c of cities) {
@@ -167,11 +173,19 @@ export default function OverviewMap({
     setPinEls(pEls);
 
     return () => {
+      disposed = true;
       stopArcDashes();
       setCityEls(null);
       setPinEls(null);
-      map.remove();
-      mapRef.current = null;
+      if (mapRef.current === map) mapRef.current = null;
+      map.off("zoom", onZoom);
+      map.off("load", onLoad);
+      try {
+        map.stop();
+        map.remove();
+      } catch {
+        // Route transitions can race MapLibre style teardown on mobile Safari.
+      }
     };
     // cities + locations + connections are immutable for the life of the page
     // eslint-disable-next-line react-hooks/exhaustive-deps

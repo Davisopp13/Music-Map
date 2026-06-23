@@ -103,6 +103,7 @@ export default function CityMap({
 
   useEffect(() => {
     if (!containerRef.current) return;
+    let disposed = false;
 
     const map = new maplibregl.Map({
       container: containerRef.current,
@@ -115,7 +116,8 @@ export default function CityMap({
       new maplibregl.NavigationControl({ showCompass: false }),
       "bottom-right"
     );
-    map.on("click", (e) => {
+    const onMapClick = (e: maplibregl.MapMouseEvent) => {
+      if (disposed || mapRef.current !== map) return;
       // a tap on a stitched thread opens its note, not a deselect
       if (mapRef.current === map && safeHasLayer(map, "threads-hit")) {
         const hits = map.queryRenderedFeatures(e.point, {
@@ -127,8 +129,15 @@ export default function CityMap({
         }
       }
       onDeselectRef.current();
-    });
-    map.on("load", () => {
+    };
+    const onThreadMouseEnter = () => {
+      if (!disposed) map.getCanvas().style.cursor = "pointer";
+    };
+    const onThreadMouseLeave = () => {
+      if (!disposed) map.getCanvas().style.cursor = "";
+    };
+    const onMapLoad = () => {
+      if (disposed || mapRef.current !== map) return;
       // The groove: the whole city pressed into a record. Real geometry
       // centered on the city, under the roads — subliminal until noticed.
       map.addSource("grooves", {
@@ -282,14 +291,12 @@ export default function CityMap({
         source: "threads",
         paint: { "line-width": 20, "line-opacity": 0 },
       });
-      map.on("mouseenter", "threads-hit", () => {
-        map.getCanvas().style.cursor = "pointer";
-      });
-      map.on("mouseleave", "threads-hit", () => {
-        map.getCanvas().style.cursor = "";
-      });
+      map.on("mouseenter", "threads-hit", onThreadMouseEnter);
+      map.on("mouseleave", "threads-hit", onThreadMouseLeave);
       setMapReady(true);
-    });
+    };
+    map.on("click", onMapClick);
+    map.on("load", onMapLoad);
     mapRef.current = map;
 
     // Frame the walking cluster (orbit pins are off-map by design; the
@@ -320,11 +327,23 @@ export default function CityMap({
     setMarkerEls(els);
 
     return () => {
+      disposed = true;
       setMarkerEls(null);
       setMapReady(false);
       setEdgeChips([]);
       if (mapRef.current === map) mapRef.current = null;
-      map.remove();
+      map.off("click", onMapClick);
+      map.off("load", onMapLoad);
+      if (safeHasLayer(map, "threads-hit")) {
+        map.off("mouseenter", "threads-hit", onThreadMouseEnter);
+        map.off("mouseleave", "threads-hit", onThreadMouseLeave);
+      }
+      try {
+        map.stop();
+        map.remove();
+      } catch {
+        // Route transitions can race MapLibre style teardown on mobile Safari.
+      }
     };
     // city + locations are immutable for the life of the page
     // eslint-disable-next-line react-hooks/exhaustive-deps
