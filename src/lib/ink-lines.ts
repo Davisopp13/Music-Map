@@ -148,14 +148,24 @@ export function animateDashes(
   if (prefersReducedMotion()) return () => {};
   let raf = 0;
   let lastStep = -1;
+  let stopped = false;
   const frame = (now: number) => {
+    if (stopped) return;
     const step = Math.floor(((now % cycleMs) / cycleMs) * DASH_FRAMES.length);
-    if (step !== lastStep && map.getLayer(layerId)) {
-      map.setPaintProperty(layerId, "line-dasharray", DASH_FRAMES[step]);
-      lastStep = step;
+    try {
+      if (step !== lastStep && map.getLayer(layerId)) {
+        map.setPaintProperty(layerId, "line-dasharray", DASH_FRAMES[step]);
+        lastStep = step;
+      }
+    } catch {
+      stopped = true;
+      return;
     }
     raf = requestAnimationFrame(frame);
   };
   raf = requestAnimationFrame(frame);
-  return () => cancelAnimationFrame(raf);
+  return () => {
+    stopped = true;
+    cancelAnimationFrame(raf);
+  };
 }

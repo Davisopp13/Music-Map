@@ -32,5 +32,12 @@ export default async function CityPage({ params, searchParams }: Props) {
   ]);
   if (!data) notFound();
   // ?pin=slug opens a card on arrival — how inter-city threads land
-  return <CityExperience data={data} cities={cities} initialPinSlug={pin} />;
+  return (
+    <CityExperience
+      key={`${data.city.id}:${pin ?? ""}`}
+      data={data}
+      cities={cities}
+      initialPinSlug={pin}
+    />
+  );
 }

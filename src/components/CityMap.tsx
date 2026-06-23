@@ -46,6 +46,8 @@ interface CityMapProps {
   ripplingId: string | null; // pin whose Spotify embed the user engaged
   trailStops: TrailStop[] | null;
   trailStopIndex: number;
+  handoffCity: City | null;
+  onHandoffComplete: () => void;
 }
 
 interface EdgeChip {
@@ -68,17 +70,21 @@ export default function CityMap({
   ripplingId,
   trailStops,
   trailStopIndex,
+  handoffCity,
+  onHandoffComplete,
 }: CityMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const onSelectRef = useRef(onSelect);
   const onDeselectRef = useRef(onDeselect);
   const onThreadClickRef = useRef(onThreadClick);
+  const onHandoffCompleteRef = useRef(onHandoffComplete);
 
   useEffect(() => {
     onSelectRef.current = onSelect;
     onDeselectRef.current = onDeselect;
     onThreadClickRef.current = onThreadClick;
+    onHandoffCompleteRef.current = onHandoffComplete;
   });
 
   // Marker DOM nodes, available once the map has mounted; portal targets.
@@ -111,7 +117,7 @@ export default function CityMap({
     );
     map.on("click", (e) => {
       // a tap on a stitched thread opens its note, not a deselect
-      if (map.getLayer("threads-hit")) {
+      if (mapRef.current === map && safeHasLayer(map, "threads-hit")) {
         const hits = map.queryRenderedFeatures(e.point, {
           layers: ["threads-hit"],
         });
@@ -316,8 +322,9 @@ export default function CityMap({
     return () => {
       setMarkerEls(null);
       setMapReady(false);
+      setEdgeChips([]);
+      if (mapRef.current === map) mapRef.current = null;
       map.remove();
-      mapRef.current = null;
     };
     // city + locations are immutable for the life of the page
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -340,6 +347,37 @@ export default function CityMap({
       speed: 1.4,
     });
   }, [selectedId, locationById]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!handoffCity) return;
+    if (!map || prefersReducedMotion()) {
+      onHandoffCompleteRef.current();
+      return;
+    }
+
+    let finished = false;
+    const finish = () => {
+      if (finished) return;
+      finished = true;
+      onHandoffCompleteRef.current();
+    };
+    const timer = window.setTimeout(finish, 1800);
+
+    map.once("moveend", finish);
+    map.flyTo({
+      center: [handoffCity.center_lng, handoffCity.center_lat],
+      zoom: 6.4,
+      speed: 1.35,
+      curve: 1.25,
+      essential: true,
+    });
+
+    return () => {
+      window.clearTimeout(timer);
+      map.off("moveend", finish);
+    };
+  }, [handoffCity]);
 
   // ---- trail route: draws itself as the user advances -------------------
 
@@ -371,6 +409,7 @@ export default function CityMap({
     if (!map || !mapReady) return;
     const source = map.getSource<maplibregl.GeoJSONSource>("trail-route");
     if (!source) return;
+    let cancelled = false;
 
     if (!trailSegments) {
       trailProgressRef.current = 0;
@@ -398,6 +437,7 @@ export default function CityMap({
     };
 
     const render = (p: number) => {
+      if (cancelled || mapRef.current !== map) return;
       const coords = coordsUpTo(p);
       source.setData(
         coords.length > 1 ? featureCollection([lineFeature(coords)]) : EMPTY_FC
@@ -427,7 +467,10 @@ export default function CityMap({
       if (t < 1) trailRafRef.current = requestAnimationFrame(tick);
     };
     trailRafRef.current = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(trailRafRef.current);
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(trailRafRef.current);
+    };
   }, [trailSegments, trailStopIndex, mapReady]);
 
   // ---- story threads: stitched lines from the open pin ------------------
@@ -517,8 +560,9 @@ export default function CityMap({
     return () => {
       cancelAnimationFrame(raf);
       stopDashes?.();
+      if (mapRef.current !== map) return;
       map.off("move", updateChips);
-      if (map.getLayer("threads-line"))
+      if (safeHasLayer(map, "threads-line"))
         map.setPaintProperty("threads-line", "line-dasharray", STATIC_DASH);
     };
   }, [selectedThreads, mapReady, cities]);
@@ -564,6 +608,14 @@ export default function CityMap({
       ))}
     </div>
   );
+}
+
+function safeHasLayer(map: maplibregl.Map, layerId: string) {
+  try {
+    return Boolean(map.getLayer(layerId));
+  } catch {
+    return false;
+  }
 }
 
 function PinMarker({

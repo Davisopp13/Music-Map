@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { City, CityData, Connection } from "@/lib/types";
@@ -8,6 +8,11 @@ import CityMap from "./CityMap";
 import StoryCard from "./StoryCard";
 import TrailBar from "./TrailBar";
 import Turntable from "./Turntable";
+
+type HandoffTarget = {
+  city: City;
+  pinSlug?: string;
+};
 
 export default function CityExperience({
   data,
@@ -34,6 +39,9 @@ export default function CityExperience({
   // The user dropped the needle on this pin's Spotify embed — it ripples
   // while the card stays open, and the ambient crackle ducks out of the way.
   const [spotifyPinId, setSpotifyPinId] = useState<string | null>(null);
+  const [handoffTarget, setHandoffTarget] = useState<HandoffTarget | null>(
+    null
+  );
 
   const locationById = useMemo(
     () => new Map(locations.map((l) => [l.id, l])),
@@ -43,6 +51,12 @@ export default function CityExperience({
   const stops = useMemo(() => trail?.stops ?? [], [trail]);
   const currentStop = trailActive ? (stops[stopIndex] ?? null) : null;
   const selected = selectedId ? (locationById.get(selectedId) ?? null) : null;
+
+  useEffect(() => {
+    for (const c of cities) {
+      if (c.id !== city.id) router.prefetch(`/${c.slug}`);
+    }
+  }, [cities, city.id, router]);
 
   const selectedConnections = useMemo(
     () =>
@@ -78,6 +92,24 @@ export default function CityExperience({
     setSpotifyPinId(null);
   };
 
+  const goToCity = (targetCity: City, pinSlug?: string) => {
+    if (targetCity.id === city.id) return;
+    setSelectedId(null);
+    setTrailActive(false);
+    setStopIndex(0);
+    setOpenThreadId(null);
+    setSpotifyPinId(null);
+    setHandoffTarget({ city: targetCity, pinSlug });
+  };
+
+  const finishCityHandoff = () => {
+    if (!handoffTarget) return;
+    const pinQuery = handoffTarget.pinSlug
+      ? `?pin=${encodeURIComponent(handoffTarget.pinSlug)}`
+      : "";
+    router.push(`/${handoffTarget.city.slug}${pinQuery}`);
+  };
+
   // Follow a thread to its far pin — across the map, or across the atlas.
   const goToThreadPin = (conn: Connection) => {
     const other = conn.from.id === selectedId ? conn.to : conn.from;
@@ -86,7 +118,7 @@ export default function CityExperience({
       return;
     }
     const otherCity = cities.find((c) => c.id === other.city_id);
-    if (otherCity) router.push(`/${otherCity.slug}?pin=${other.slug}`);
+    if (otherCity) goToCity(otherCity, other.slug);
   };
 
   const goToStop = (i: number) => {
@@ -126,6 +158,8 @@ export default function CityExperience({
         ripplingId={spotifyPinId}
         trailStops={trailActive ? stops : null}
         trailStopIndex={stopIndex}
+        handoffCity={handoffTarget?.city ?? null}
+        onHandoffComplete={finishCityHandoff}
       />
 
       {/* Masthead — a Hatch poster lockup, not a page title */}
@@ -149,17 +183,28 @@ export default function CityExperience({
         {otherCities.length > 0 && (
           <nav className="pointer-events-auto mt-2 flex flex-wrap gap-1.5">
             {otherCities.map((c) => (
-              <Link
+              <button
                 key={c.id}
-                href={`/${c.slug}`}
+                type="button"
+                onClick={() => goToCity(c)}
+                disabled={handoffTarget !== null}
                 className="rounded-[3px] border border-foreground/45 bg-paper/90 px-2.5 py-1 font-poster text-[10.5px] font-medium uppercase tracking-[0.14em] text-ink-soft shadow-sm transition-colors hover:border-foreground/70 hover:text-foreground"
               >
                 {c.name} {c.state} →
-              </Link>
+              </button>
             ))}
           </nav>
         )}
       </header>
+
+      {handoffTarget && (
+        <div
+          aria-live="polite"
+          className="pointer-events-none absolute left-1/2 top-[max(7.25rem,calc(env(safe-area-inset-top)+6.25rem))] z-30 -translate-x-1/2 rounded-[3px] border border-foreground/45 bg-paper/95 px-3 py-1.5 font-poster text-[10.5px] font-medium uppercase tracking-[0.16em] text-foreground shadow-sm"
+        >
+          Opening {handoffTarget.city.name}
+        </div>
+      )}
 
       {selected && (
         <StoryCard
