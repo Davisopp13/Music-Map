@@ -2,8 +2,8 @@
 -- UPDATE 10: Location images (Wikimedia Commons / LOC, licensed)
 -- Adds image_attribution column; sets image_url + attribution
 -- for 30 pins. Sources verified by Manus, triaged by hand.
--- REJECTED (wrong subject, awaiting personal photos): Ernie Ford
--- birthplace, Club Baron, plus the 7 NO-IMAGE pins and Ameris.
+-- REJECTED (wrong subject, awaiting personal photos): Club Baron,
+-- plus the 7 NO-IMAGE pins and Ameris.
 -- House style: dollar-quoted strings.
 -- =============================================================
 
@@ -33,6 +33,11 @@ update locations set
   image_url = $q$https://commons.wikimedia.org/wiki/Special:FilePath/Paramount_Theater%2C_Bristol%2C_Tennessee_LCCN2011630773.tiff?width=1600$q$,
   image_attribution = $q$Photo: Carol M. Highsmith, public domain, via Library of Congress / Wikimedia Commons$q$
 where slug = 'paramount-bristol';
+
+update locations set
+  image_url = $q$https://upload.wikimedia.org/wikipedia/commons/4/4e/Tennessee_Ernie_Ford_1957.JPG$q$,
+  image_attribution = $q$Tennessee Ernie Ford in 1957. Photo: NBC Television, public domain, via Wikimedia Commons$q$
+where slug = 'tennessee-ernie-ford-birthplace';
 
 update locations set
   image_url = $q$https://upload.wikimedia.org/wikipedia/commons/0/01/APs_homeplace_cabin-exterior_2_copy_%283304731233%29.jpg$q$,
