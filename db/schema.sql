@@ -42,6 +42,13 @@ create table locations (
   spotify_track_id  text,                    -- embed on the card
   spotify_track_label text,                  -- "Listen: 'Single Girl, Married Girl'"
   image_url       text,
+  venue_status    text check (venue_status in
+                    ('active','seasonal','closed','demolished')),
+  official_url    text,
+  tickets_url     text,
+  setlistfm_url   text,
+  setlistfm_venue_id text,
+  ticketmaster_venue_id text,
   is_orbit        boolean default false,     -- nearby-but-essential (Carter Fold)
   sort_order      integer default 0
 );

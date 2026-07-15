@@ -16,6 +16,16 @@ watercolors, needle-drop ripple, ambient turntable (the map overhaul).
 - CMS or admin for content edits
 - Multi-city trails + the Southern pilgrimage loop (ATL → Macon → Bristol → Nashville)
 
+## Venue enrichment
+
+Phase one shipped July 2026: reusable static venue links plus Bristol data for
+Paramount, Carter Family Fold, Rhythm & Roots, Cameo Theatre, and Hard Rock
+Live. The provider IDs live on `locations` for future enrichment.
+
+Next phase: cache upcoming Ticketmaster events and setlist.fm history in a
+`concert_events` table. Do not call live provider APIs from the story card
+render path. Bandsintown remains out unless broader platform access is approved.
+
 ## Content (back to chat)
 
 - Spotify track IDs (`spotify_track_id` is null everywhere; labels are seeded

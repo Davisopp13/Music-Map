@@ -1,14 +1,18 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import {
   ArrowRight,
+  CalendarDays,
   Compass,
   ExternalLink,
+  Globe2,
+  ListMusic,
   MapPin,
   Music2,
   Spline,
+  Ticket,
   X,
 } from "lucide-react";
 import { PIN_TYPES } from "@/lib/pin-types";
@@ -55,6 +59,12 @@ export default function StoryCard({
 }: StoryCardProps) {
   const cfg = PIN_TYPES[location.pin_type];
   const TypeIcon = cfg.icon;
+  const hasVenueDetails = Boolean(
+    location.venue_status ||
+      location.official_url ||
+      location.tickets_url ||
+      location.setlistfm_url
+  );
 
   // Spotify's embed gives no playback events cross-origin; the accepted
   // heuristic is "the user clicked into the iframe" — window blurs and the
@@ -133,19 +143,12 @@ export default function StoryCard({
         )}
 
         {location.image_url && (
-          <figure className="mt-4">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={location.image_url}
-              alt={location.name}
-              className="aspect-[3/2] w-full rounded-lg border border-paper-edge object-cover"
-            />
-            {location.image_attribution && (
-              <figcaption className="mt-1.5 text-xs italic text-foreground/50">
-                {location.image_attribution}
-              </figcaption>
-            )}
-          </figure>
+          <StoryImage
+            key={location.image_url}
+            src={location.image_url}
+            alt={location.name}
+            attribution={location.image_attribution}
+          />
         )}
 
         {location.is_orbit && (
@@ -248,6 +251,39 @@ export default function StoryCard({
           </div>
         )}
 
+        {hasVenueDetails && (
+          <section className="mt-5 border-t border-paper-edge pt-4">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+              <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-ink-soft">
+                <CalendarDays size={13} />
+                Venue now
+              </p>
+              {location.venue_status && (
+                <span className="text-[12px] font-medium text-foreground/70">
+                  {venueStatusLabel(location.venue_status)}
+                </span>
+              )}
+            </div>
+            <div className="mt-2.5 flex flex-wrap gap-2">
+              {location.official_url && (
+                <VenueLink href={location.official_url} icon={Globe2}>
+                  Official site
+                </VenueLink>
+              )}
+              {location.tickets_url && (
+                <VenueLink href={location.tickets_url} icon={Ticket}>
+                  Shows &amp; tickets
+                </VenueLink>
+              )}
+              {location.setlistfm_url && (
+                <VenueLink href={location.setlistfm_url} icon={ListMusic}>
+                  Past setlists
+                </VenueLink>
+              )}
+            </div>
+          </section>
+        )}
+
         {location.address && (
           <p className="mt-5 flex items-start gap-1.5 border-t border-paper-edge pt-4 text-[13px] text-ink-soft">
             <MapPin size={14} className="mt-0.5 shrink-0" />
@@ -266,6 +302,77 @@ export default function StoryCard({
       </div>
     </aside>
   );
+}
+
+function StoryImage({
+  src,
+  alt,
+  attribution,
+}: {
+  src: string;
+  alt: string;
+  attribution: string | null;
+}) {
+  const [failed, setFailed] = useState(false);
+  const objectPosition = src.includes("Tennessee_Ernie_Ford_1957")
+    ? "object-top"
+    : "object-center";
+  if (failed) return null;
+
+  return (
+    <figure className="mt-4">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={src}
+        alt={alt}
+        loading="lazy"
+        decoding="async"
+        onError={() => setFailed(true)}
+        className={`aspect-[3/2] w-full rounded-lg border border-paper-edge object-cover ${objectPosition}`}
+      />
+      {attribution && (
+        <figcaption className="mt-1.5 text-xs italic text-foreground/50">
+          {attribution}
+        </figcaption>
+      )}
+    </figure>
+  );
+}
+
+function VenueLink({
+  href,
+  icon: Icon,
+  children,
+}: {
+  href: string;
+  icon: React.ComponentType<{ size?: number; className?: string }>;
+  children: React.ReactNode;
+}) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noreferrer"
+      className="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-paper-edge bg-background px-3 py-2 text-[12.5px] font-semibold text-foreground transition-colors hover:border-foreground/40"
+    >
+      <Icon size={14} className="shrink-0" />
+      <span>{children}</span>
+      <ExternalLink size={11} className="shrink-0 text-ink-soft" />
+    </a>
+  );
+}
+
+function venueStatusLabel(status: NonNullable<Location["venue_status"]>) {
+  switch (status) {
+    case "active":
+      return "Active venue";
+    case "seasonal":
+      return "Seasonal festival";
+    case "closed":
+      return "Closed venue";
+    case "demolished":
+      return "Demolished venue";
+  }
 }
 
 function EraBadge({ start, end }: { start: number | null; end: number | null }) {

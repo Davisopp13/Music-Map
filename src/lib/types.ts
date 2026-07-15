@@ -7,6 +7,8 @@ export type PinType =
   | "street"
   | "festival";
 
+export type VenueStatus = "active" | "seasonal" | "closed" | "demolished";
+
 export interface City {
   id: string;
   slug: string;
@@ -37,6 +39,12 @@ export interface Location {
   spotify_track_label: string | null;
   image_url: string | null;
   image_attribution: string | null;
+  venue_status: VenueStatus | null;
+  official_url: string | null;
+  tickets_url: string | null;
+  setlistfm_url: string | null;
+  setlistfm_venue_id: string | null;
+  ticketmaster_venue_id: string | null;
   is_orbit: boolean;
   sort_order: number;
 }

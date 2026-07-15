@@ -1,7 +1,13 @@
 // DEV FALLBACK ONLY â€” mirrors db/seed_bristol.sql so the app runs before
 // Supabase env vars are configured. The SQL seed is the source of truth;
 // if you edit content there, regenerate this file to match.
-import type { CityData, Location, PinType, Trail } from "./types";
+import type {
+  CityData,
+  Location,
+  PinType,
+  Trail,
+  VenueStatus,
+} from "./types";
 
 const CITY_ID = "local-bristol";
 
@@ -172,29 +178,130 @@ Whether every detail holds up, the Burger Bar leans into its place in the myth â
     null,
     false,
   ],
+  [
+    "cameo-theatre",
+    "Cameo Theatre",
+    36.5952472,
+    -82.1854053,
+    "703 State Street, Bristol, VA 24201",
+    "venue",
+    1925,
+    null,
+    `The Cameo Theatre opened on March 30, 1925 with a vaudeville performance, two years before the Bristol Sessions changed the sound of State Street. Across the next century the room lived several lives: movie theatre, music hall, church, and radio station.
+
+Brent and Stanley Buchanan restored the building, and Theatre Bristol brought live performance back to the stage for its centennial in 2025. Few Bristol rooms carry the city's entertainment history so cleanly from the pre-Sessions era into the present.`,
+    "Restored and active as one of Theatre Bristol's three State Street stages, presenting live theatre and community productions.",
+    null,
+    false,
+  ],
+  [
+    "hard-rock-live-bristol",
+    "Hard Rock Live Bristol",
+    36.5982229,
+    -82.2192035,
+    "500 Gate City Hwy, Bristol, VA 24201",
+    "venue",
+    2024,
+    null,
+    `When the permanent Hard Rock Hotel & Casino Bristol opened on November 14, 2024, its first night included a Blake Shelton concert in a new 23,000-square-foot performance room. Hard Rock Live brought a 2,000-plus-capacity touring stage to the western edge of the city.
+
+For a place whose musical identity begins with portable recording equipment in 1927, this is the newest end of the timeline: a modern regional room routing national acts through Bristol nearly a century later.`,
+    "An active 2,000-plus-capacity venue inside Hard Rock Hotel & Casino Bristol. Most events are 21+; check the individual listing before you go.",
+    null,
+    true,
+  ],
 ];
 
-const locations: Location[] = pins.map((p, i) => ({
-  id: p[0],
-  city_id: CITY_ID,
-  slug: p[0],
-  name: p[1],
-  lat: p[2],
-  lng: p[3],
-  coords_verified: true,
-  address: p[4],
-  pin_type: p[5],
-  era_start: p[6],
-  era_end: p[7],
-  story_md: p[8],
-  what_is_there_now: p[9],
-  spotify_track_id: null,
-  spotify_track_label: p[10],
-  image_url: null,
-  image_attribution: null,
-  is_orbit: p[11],
-  sort_order: i + 1,
-}));
+type VenueMetadata = {
+  venue_status: VenueStatus;
+  official_url: string;
+  tickets_url: string;
+  setlistfm_url: string;
+  setlistfm_venue_id: string;
+  ticketmaster_venue_id: string | null;
+};
+
+const venueMetadata: Record<string, VenueMetadata> = {
+  "cameo-theatre": {
+    venue_status: "active",
+    official_url: "https://theatrebristol.org/our-stages/",
+    tickets_url: "https://theatrebristol.org/tickets/",
+    setlistfm_url:
+      "https://www.setlist.fm/venue/the-cameo-theater-bristol-va-usa-5bd0fb9c.html",
+    setlistfm_venue_id: "5bd0fb9c",
+    ticketmaster_venue_id: null,
+  },
+  "hard-rock-live-bristol": {
+    venue_status: "active",
+    official_url:
+      "https://casino.hardrock.com/bristol/entertainment/hard-rock-live",
+    tickets_url:
+      "https://www.ticketmaster.com/hard-rock-live-bristol-tickets-bristol/venue/222877",
+    setlistfm_url:
+      "https://www.setlist.fm/venue/hard-rock-live-bristol-va-usa-53de8711.html",
+    setlistfm_venue_id: "53de8711",
+    ticketmaster_venue_id: "222877",
+  },
+  "paramount-bristol": {
+    venue_status: "active",
+    official_url: "https://paramountbristol.org/",
+    tickets_url: "https://paramountbristol.org/music-live-events/",
+    setlistfm_url:
+      "https://www.setlist.fm/venue/paramount-center-for-the-arts-bristol-tn-usa-73d4eee5.html",
+    setlistfm_venue_id: "73d4eee5",
+    ticketmaster_venue_id: null,
+  },
+  "carter-family-fold": {
+    venue_status: "active",
+    official_url: "https://carterfamilyfold.org/",
+    tickets_url: "https://carterfamilyfold.org/events/",
+    setlistfm_url:
+      "https://www.setlist.fm/venue/carter-family-fold-hiltons-va-usa-63d6daeb.html",
+    setlistfm_venue_id: "63d6daeb",
+    ticketmaster_venue_id: null,
+  },
+  "rhythm-and-roots": {
+    venue_status: "seasonal",
+    official_url:
+      "https://birthplaceofcountrymusic.org/festival-bristol-rhythm/",
+    tickets_url: "https://birthplaceofcountrymusic.org/tickets/",
+    setlistfm_url:
+      "https://www.setlist.fm/venue/bristol-rhythm-and-roots-reunion-bristol-tn-usa-5bd723d8.html",
+    setlistfm_venue_id: "5bd723d8",
+    ticketmaster_venue_id: null,
+  },
+};
+
+const locations: Location[] = pins.map((p, i) => {
+  const venue = venueMetadata[p[0]];
+  return {
+    id: p[0],
+    city_id: CITY_ID,
+    slug: p[0],
+    name: p[1],
+    lat: p[2],
+    lng: p[3],
+    coords_verified: true,
+    address: p[4],
+    pin_type: p[5],
+    era_start: p[6],
+    era_end: p[7],
+    story_md: p[8],
+    what_is_there_now: p[9],
+    spotify_track_id: null,
+    spotify_track_label: p[10],
+    image_url: null,
+    image_attribution: null,
+    venue_status: venue?.venue_status ?? null,
+    official_url: venue?.official_url ?? null,
+    tickets_url: venue?.tickets_url ?? null,
+    setlistfm_url: venue?.setlistfm_url ?? null,
+    setlistfm_venue_id: venue?.setlistfm_venue_id ?? null,
+    ticketmaster_venue_id: venue?.ticketmaster_venue_id ?? null,
+    is_orbit: p[11],
+    sort_order: i + 1,
+  };
+});
 
 const trailStops: [slug: string, order: number, note: string][] = [
   [

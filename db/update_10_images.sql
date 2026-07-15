@@ -35,7 +35,7 @@ update locations set
 where slug = 'paramount-bristol';
 
 update locations set
-  image_url = $q$https://upload.wikimedia.org/wikipedia/commons/4/4e/Tennessee_Ernie_Ford_1957.JPG$q$,
+  image_url = $q$https://upload.wikimedia.org/wikipedia/commons/a/ab/Tennessee_Ernie_Ford_1957.JPG$q$,
   image_attribution = $q$Tennessee Ernie Ford in 1957. Photo: NBC Television, public domain, via Wikimedia Commons$q$
 where slug = 'tennessee-ernie-ford-birthplace';
 

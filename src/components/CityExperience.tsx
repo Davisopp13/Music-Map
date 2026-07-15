@@ -230,7 +230,11 @@ export default function CityExperience({
           open card is a no-track pin. Silence stays silent. */}
       {/* bottom-left, lifted above the mobile trail dock (and the Next.js
           dev badge that owns the exact corner during development) */}
-      <div className="absolute bottom-[max(5rem,calc(env(safe-area-inset-bottom)+4.5rem))] left-3 z-40 md:left-5">
+      <div
+        className={`absolute bottom-[max(5rem,calc(env(safe-area-inset-bottom)+4.5rem))] left-3 z-40 md:left-5 ${
+          selected ? "hidden md:block" : ""
+        }`}
+      >
         <Turntable
           silenced={
             spotifyPinId !== null ||
