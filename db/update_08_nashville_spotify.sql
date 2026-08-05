@@ -1,6 +1,6 @@
 -- =============================================================
--- UPDATE 07: Nashville — Opry House awakens + Spotify tracklist
--- Run after seed_nashville_v2.sql
+-- UPDATE 08: Nashville — Opry House awakens + Spotify tracklist
+-- Run after seed_nashville.sql
 -- House style: dollar-quoted strings (editor-mangle-proof).
 -- Replace REPLACE_ME with the ID from each share link.
 -- =============================================================

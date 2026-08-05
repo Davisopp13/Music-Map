@@ -1,27 +1,11 @@
-// Dev utility: screenshot a page with the cached Playwright chromium.
+// Dev utility: screenshot a page with Playwright's managed Chromium.
 // Usage: node scripts/screenshot.mjs <url> <outfile> [width] [height] [waitMs]
-import os from "node:os";
-import path from "node:path";
-import fs from "node:fs";
 import { chromium } from "playwright-core";
 
 const [url, outfile, w = "1280", h = "800", waitMs = "9000"] =
   process.argv.slice(2);
 
-const cacheRoot = path.join(os.homedir(), "Library/Caches/ms-playwright");
-const shellDir = fs
-  .readdirSync(cacheRoot)
-  .filter((d) => d.startsWith("chromium_headless_shell-"))
-  .sort()
-  .pop();
-const executablePath = path.join(
-  cacheRoot,
-  shellDir,
-  "chrome-headless-shell-mac-arm64",
-  "chrome-headless-shell"
-);
-
-const browser = await chromium.launch({ executablePath });
+const browser = await chromium.launch();
 const page = await browser.newPage({
   viewport: { width: Number(w), height: Number(h) },
   deviceScaleFactor: 2,

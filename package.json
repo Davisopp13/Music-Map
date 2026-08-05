@@ -7,7 +7,13 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "glyphs": "node scripts/build-glyphs.mjs"
+    "glyphs": "node scripts/build-glyphs.mjs",
+    "browser:install": "playwright-core install chromium",
+    "snapshot:phase1": "node --env-file-if-exists=.env.local scripts/snapshot-phase1.mjs",
+    "verify:data": "node --env-file-if-exists=.env.local scripts/verify-data.mjs",
+    "verify:data:local": "node --env-file-if-exists=.env.local scripts/verify-data.mjs --skip-remote",
+    "verify:browser": "node scripts/verify-browser.mjs",
+    "verify:pwa": "node scripts/verify-pwa.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.108.1",

@@ -1,6 +1,6 @@
 // Dev utility: regenerate the PWA icon set from scripts/icon-source.png
-// (the vinyl-record map pin on cream). Renders with the cached Playwright
-// chromium, same as screenshot.mjs — no native image deps.
+// (the vinyl-record map pin on cream). Renders with Playwright's managed
+// Chromium, same as screenshot.mjs — no native image deps.
 //
 // Outputs:
 //   public/icons/icon-{192,512}.png        purpose "any", art near full bleed
@@ -14,31 +14,16 @@
 //                                          for eyeballing the safe zone
 //
 // Usage: node scripts/build-icons.mjs
-import os from "node:os";
-import path from "node:path";
 import fs from "node:fs";
 import { chromium } from "playwright-core";
 
 const SRC = "scripts/icon-source.png";
 const OUT = "public/icons";
 
-const cacheRoot = path.join(os.homedir(), "Library/Caches/ms-playwright");
-const shellDir = fs
-  .readdirSync(cacheRoot)
-  .filter((d) => d.startsWith("chromium_headless_shell-"))
-  .sort()
-  .pop();
-const executablePath = path.join(
-  cacheRoot,
-  shellDir,
-  "chrome-headless-shell-mac-arm64",
-  "chrome-headless-shell"
-);
-
 const b64 = fs.readFileSync(SRC).toString("base64");
 fs.mkdirSync(OUT, { recursive: true });
 
-const browser = await chromium.launch({ executablePath });
+const browser = await chromium.launch();
 const page = await browser.newPage();
 await page.setContent(
   `<img id="src" src="data:image/png;base64,${b64}">`

@@ -1,7 +1,8 @@
 -- =============================================================
 -- SEED: NASHVILLE, TN — "Mother Church and Music Row"
--- Facts verified June 2026. Pins with coords_verified = false
--- should be geocoded from address during build.
+-- Facts and coordinates reverified August 2026. Addresses were checked
+-- against official venue/institution pages, then matched in OpenStreetMap
+-- through Nominatim. Match quality is noted above each pin.
 -- NOTE: Run AFTER seed_bristol.sql, seed_macon.sql, and
 -- seed_atlanta.sql — inter-city connections reference their pins.
 -- =============================================================
@@ -23,9 +24,10 @@ insert into locations
 select c.id, v.* from c, (values
 
 -- 1. THE MOTHER CHURCH -----------------------------------------------
+-- Exact named POI match: Ryman Auditorium, Nominatim/OSM.
 ('ryman-auditorium',
  'Ryman Auditorium',
- 36.1612, -86.7785, false,
+ 36.1612473, -86.7784951, true,
  '116 Rep. John Lewis Way N, Nashville, TN 37219',
  'venue', 1892, null,
  $q$Built in 1892 by riverboat captain Tom Ryman as the Union Gospel Tabernacle — the largest auditorium south of the Ohio River, soon nicknamed the Carnegie Hall of the South. In 1943 the Grand Ole Opry moved in and stayed thirty-one years, making the Ryman the Mother Church of Country Music.
@@ -36,9 +38,10 @@ What happened under that roof is a map of the genre itself. In December 1945, a 
  false, 1),
 
 -- 2. TOOTSIE'S ----------------------------------------------------------
+-- Exact named POI match: Tootsie's Orchid Lounge, Nominatim/OSM.
 ('tootsies-orchid-lounge',
  'Tootsie''s Orchid Lounge',
- 36.1607, -86.7780, false,
+ 36.1608889, -86.7782841, true,
  '422 Broadway, Nashville, TN 37203',
  'venue', 1960, null,
  $q$The purple honky-tonk whose back door opens onto the alley behind the Ryman — close enough that Opry performers could slip over between sets, and broke songwriters could catch them coming. Hattie Tootsie Bess bought the place in 1960, kept a cigar box of IOUs from hungry writers, and presided over the room where Willie Nelson, Kris Kristofferson, Roger Miller, and Hank Cochran drank, schemed, and pitched.
@@ -49,9 +52,10 @@ The most consequential pitch: Willie Nelson, newly arrived and broke, played his
  false, 2),
 
 -- 3. RCA STUDIO B --------------------------------------------------------
+-- Exact named POI match: Historic RCA Studio B, Nominatim/OSM.
 ('rca-studio-b',
  'RCA Studio B',
- 36.1497, -86.7950, false,
+ 36.1499750, -86.7928744, true,
  '1611 Roy Acuff Place, Nashville, TN 37203',
  'studio', 1957, 1977,
  $q$The hit factory of the Nashville Sound. Elvis Presley recorded more than 200 songs in this room — Are You Lonesome Tonight? and It's Now or Never among them — standing on the X engineer Bill Porter taped to the floor to mark the room's sweet spot, beneath the triangular Porter Pyramids he hung to tame the acoustics. Roy Orbison cut Only the Lonely here — the Everly Brothers, Jim Reeves, Waylon, and Charley Pride all worked this room.
@@ -62,9 +66,10 @@ And in 1973, Dolly Parton recorded Jolene and I Will Always Love You here — in
  false, 3),
 
 -- 4. THE QUONSET HUT ------------------------------------------------------
+-- Exact street-address/building match at 34 Music Square East, Nominatim/OSM.
 ('quonset-hut',
  'The Quonset Hut (Columbia Studio B)',
- 36.1502, -86.7918, false,
+ 36.1493030, -86.7919680, true,
  '34 Music Square East, Nashville, TN 37203',
  'studio', 1954, 1982,
  $q$Music Row exists because of this building. In 1954-55, brothers Owen and Harold Bradley converted a house and an Army-surplus Quonset hut into Nashville's first Music Row recording studio — and the hits that poured out pulled every label in town to 16th Avenue. Patsy Cline recorded Crazy here in 1961, delivering Willie Nelson's tortured melody in one astonishing take. Brenda Lee's I'm Sorry, and decades of Johnny Cash, George Jones, Tammy Wynette, and Merle Haggard followed.
@@ -75,9 +80,10 @@ Columbia bought the complex in 1962 and built Studio A next door — where Bob D
  false, 4),
 
 -- 5. CLUB BARON / JEFFERSON STREET -----------------------------------------
+-- Exact street-address/building match at 2614 Jefferson Street, Nominatim/OSM.
 ('club-baron',
  'Club Baron (Jefferson Street)',
- 36.1685, -86.8135, false,
+ 36.1681910, -86.8170230, true,
  '2614 Jefferson Street, Nashville, TN 37208',
  'venue', 1955, null,
  $q$The chapter most Nashville maps skip. From the 1930s to the 1960s, Jefferson Street was the city's R&B spine — a chitlin' circuit stronghold where Duke Ellington, Ella Fitzgerald, Little Richard, Etta James, and Otis Redding played the Del Morocco, the New Era, and Club Baron, drawing crowds from Fisk and Tennessee State.
@@ -90,9 +96,10 @@ Interstate 40 was later routed through the neighborhood, gutting the district. T
  false, 5),
 
 -- 6. THE BLUEBIRD -------------------------------------------------------------
+-- Exact street-address/building match at 4104 Hillsboro Pike, Nominatim/OSM.
 ('bluebird-cafe',
  'The Bluebird Cafe',
- 36.1027, -86.8163, false,
+ 36.1013513, -86.8181566, true,
  '4104 Hillsboro Pike, Nashville, TN 37215',
  'venue', 1982, null,
  $q$Ninety seats in a strip mall, and arguably the most important small room in American songwriting. Since 1982 the Bluebird has run in the round — writers, not stars, sitting in the middle of the room playing the hits they wrote for other people, with a strictly enforced hush (the staff will shush you, regardless of who you are).
@@ -103,10 +110,12 @@ Its discovery legends are the genre's founding myths: Garth Brooks was signed af
  false, 6),
 
 -- 7. THE OPRY HOUSE -------------------------------------------------------------
+-- Exact named POI match: Grand Ole Opry House, Nominatim/OSM. The official
+-- Opry address is 600 Opry Mills Drive (corrected from 2804 Opryland Drive).
 ('grand-ole-opry-house',
  'Grand Ole Opry House',
- 36.2069, -86.6922, false,
- '2804 Opryland Drive, Nashville, TN 37214',
+ 36.2069577, -86.6918054, true,
+ '600 Opry Mills Drive, Nashville, TN 37214',
  'venue', 1974, null,
  $q$When the Opry left the Ryman in 1974 for its purpose-built home east of town, it carried its soul along physically: a six-foot circle of the Ryman's oak stage was cut out and inlaid at center stage of the new house. Every performer since — debuts, inductions, final bows — has stood on the same wood where Hank Williams stood.
 
@@ -116,9 +125,10 @@ The Opry itself is the longest-running radio broadcast in American history, on a
  false, 7),
 
 -- 8. THE STATION INN ---------------------------------------------------------------
+-- Exact named POI match: Station Inn, Nominatim/OSM.
 ('station-inn',
  'Station Inn',
- 36.1525, -86.7843, false,
+ 36.1525608, -86.7846399, true,
  '402 12th Avenue South, Nashville, TN 37203',
  'venue', 1974, null,
  $q$A squat stone bunker that watched the Gulch grow luxury towers around it and declined to care. Since 1974 the Station Inn has been bluegrass's world headquarters — Bill Monroe dropped in, Vince Gill treats it like a clubhouse, and the Sunday night jam is open to anyone who can keep up. No reservations, folding chairs, popcorn, and some of the best pickers alive any night of the week.
@@ -129,9 +139,10 @@ If the Ryman is where bluegrass was born, this is where it lives.$q$,
  false, 8),
 
 -- 9. HATCH SHOW PRINT ----------------------------------------------------------------
+-- Exact street-address/building match at 224 Rep. John Lewis Way S, Nominatim/OSM.
 ('hatch-show-print',
  'Hatch Show Print',
- 36.1581, -86.7765, false,
+ 36.1580072, -86.7767056, true,
  '224 Rep. John Lewis Way S, Nashville, TN 37203',
  'marker', 1879, null,
  $q$Printing since 1879, and the reason country music looks the way it looks. Hatch's hand-carved letterpress blocks produced the posters for the Opry, Hank Williams, Johnny Cash, Elvis, and nearly a century of shows — bold wood type and two-color ink that became the visual language of American roots music. The shop still prints with the same blocks — a modern Hatch poster for tonight's Ryman show is made the way one was in 1940.

@@ -4,27 +4,11 @@
 //   - NO cache ever contains a Supabase response (live data contract)
 //   - offline navigation serves the branded fallback page
 // Usage: node scripts/verify-pwa.mjs [origin]
-import os from "node:os";
-import path from "node:path";
-import fs from "node:fs";
 import { chromium } from "playwright-core";
 
 const origin = process.argv[2] ?? "http://localhost:3000";
 
-const cacheRoot = path.join(os.homedir(), "Library/Caches/ms-playwright");
-const shellDir = fs
-  .readdirSync(cacheRoot)
-  .filter((d) => d.startsWith("chromium_headless_shell-"))
-  .sort()
-  .pop();
-const executablePath = path.join(
-  cacheRoot,
-  shellDir,
-  "chrome-headless-shell-mac-arm64",
-  "chrome-headless-shell"
-);
-
-const browser = await chromium.launch({ executablePath });
+const browser = await chromium.launch();
 const context = await browser.newContext();
 const page = await context.newPage();
 

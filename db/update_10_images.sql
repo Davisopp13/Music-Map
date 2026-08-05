@@ -1,7 +1,7 @@
 -- =============================================================
 -- UPDATE 10: Location images (Wikimedia Commons / LOC, licensed)
 -- Adds image_attribution column; sets image_url + attribution
--- for 30 pins. Sources verified by Manus, triaged by hand.
+-- for 31 pins. Sources verified and triaged by hand.
 -- REJECTED (wrong subject, awaiting personal photos): Club Baron,
 -- plus the 7 NO-IMAGE pins and Ameris.
 -- House style: dollar-quoted strings.

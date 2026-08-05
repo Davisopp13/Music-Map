@@ -31,7 +31,7 @@ const oswald = Oswald({
 export const metadata: Metadata = {
   title: "Music History Map",
   description:
-    "An interactive map of American music history — story-rich pins and curated trails, starting with Bristol, TN/VA.",
+    "An interactive atlas of American music history across Bristol, Macon, Atlanta, and Nashville.",
   appleWebApp: {
     capable: true,
     title: "Music Map",

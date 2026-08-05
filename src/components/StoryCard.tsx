@@ -260,7 +260,7 @@ export default function StoryCard({
               </p>
               {location.venue_status && (
                 <span className="text-[12px] font-medium text-foreground/70">
-                  {venueStatusLabel(location.venue_status)}
+                  {venueStatusLabel(location.venue_status, location.pin_type)}
                 </span>
               )}
             </div>
@@ -362,12 +362,15 @@ function VenueLink({
   );
 }
 
-function venueStatusLabel(status: NonNullable<Location["venue_status"]>) {
+function venueStatusLabel(
+  status: NonNullable<Location["venue_status"]>,
+  pinType: Location["pin_type"]
+) {
   switch (status) {
     case "active":
       return "Active venue";
     case "seasonal":
-      return "Seasonal festival";
+      return pinType === "festival" ? "Seasonal festival" : "Seasonal venue";
     case "closed":
       return "Closed venue";
     case "demolished":

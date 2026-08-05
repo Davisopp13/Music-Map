@@ -1,5 +1,5 @@
 -- =============================================================
--- MUSIC HISTORY MAP — Supabase Schema v1
+-- MUSIC HISTORY MAP — canonical Supabase schema
 -- Cities → Locations (pins) → Connections (story threads)
 -- Trails → Trail Stops (ordered narratives)
 -- =============================================================
@@ -11,7 +11,7 @@ create extension if not exists "uuid-ossp";
 -- -------------------------------------------------------------
 create table cities (
   id          uuid primary key default uuid_generate_v4(),
-  slug        text unique not null,          -- 'bristol', 'macon', 'atlanta'
+  slug        text unique not null,          -- 'bristol', 'macon', 'atlanta', 'nashville'
   name        text not null,
   state       text,                          -- 'TN/VA' is valid (Bristol!)
   center_lat  double precision not null,
@@ -42,6 +42,7 @@ create table locations (
   spotify_track_id  text,                    -- embed on the card
   spotify_track_label text,                  -- "Listen: 'Single Girl, Married Girl'"
   image_url       text,
+  image_attribution text,
   venue_status    text check (venue_status in
                     ('active','seasonal','closed','demolished')),
   official_url    text,
@@ -90,8 +91,21 @@ create table trail_stops (
 );
 
 -- -------------------------------------------------------------
+-- DISTRICTS (soft atlas washes beneath clusters of pins)
+-- -------------------------------------------------------------
+create table districts (
+  id      uuid primary key default uuid_generate_v4(),
+  city_id uuid references cities(id) on delete cascade,
+  name    text not null,
+  geojson jsonb not null,
+  color   text not null default '#9b8a5a',
+  constraint districts_city_name_key unique (city_id, name)
+);
+
+create index idx_districts_city on districts(city_id);
+
+-- -------------------------------------------------------------
 -- NOTES
--- * No RLS for MVP — public read-only data, personal project.
 -- * Personal pins layer, auth, and user content = V2.
 -- * spotify_track_id only (not full URLs) so the embed component
 --   owns the URL format.
@@ -109,9 +123,11 @@ alter table locations   enable row level security;
 alter table connections enable row level security;
 alter table trails      enable row level security;
 alter table trail_stops enable row level security;
+alter table districts   enable row level security;
 
 create policy "public read" on cities      for select to anon, authenticated using (true);
 create policy "public read" on locations   for select to anon, authenticated using (true);
 create policy "public read" on connections for select to anon, authenticated using (true);
 create policy "public read" on trails      for select to anon, authenticated using (true);
 create policy "public read" on trail_stops for select to anon, authenticated using (true);
+create policy "public read" on districts   for select to anon, authenticated using (true);

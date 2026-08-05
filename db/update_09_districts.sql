@@ -1,11 +1,11 @@
 -- =============================================================
--- UPDATE 08 — DISTRICTS (watercolor washes under the music blocks)
+-- UPDATE 09 — DISTRICTS (watercolor washes under the music blocks)
 -- Soft polygon fills rendered like watercolor on the city maps.
 -- Polygons are deliberately rough and hand-drawn — precision would
 -- break the worn-atlas aesthetic.
 -- =============================================================
 
-create table districts (
+create table if not exists districts (
   id      uuid primary key default uuid_generate_v4(),
   city_id uuid references cities(id) on delete cascade,
   name    text not null,
@@ -13,10 +13,35 @@ create table districts (
   color   text not null default '#9b8a5a'    -- wash tint, hex
 );
 
-create index idx_districts_city on districts(city_id);
+create index if not exists idx_districts_city on districts(city_id);
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'districts_city_name_key'
+      and conrelid = 'public.districts'::regclass
+  ) then
+    alter table districts add constraint districts_city_name_key
+      unique (city_id, name);
+  end if;
+end
+$$;
 
 alter table districts enable row level security;
-create policy "public read" on districts for select to anon, authenticated using (true);
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies
+    where schemaname = 'public'
+      and tablename = 'districts'
+      and policyname = 'public read'
+  ) then
+    create policy "public read" on districts
+      for select to anon, authenticated using (true);
+  end if;
+end
+$$;
 
 insert into districts (city_id, name, geojson, color)
 select c.id, v.name, v.geojson::jsonb, v.color
@@ -52,4 +77,7 @@ from (values
     [-83.6302,32.8352],[-83.6243,32.8346],[-83.6228,32.8313],[-83.6262,32.8290],
     [-83.6308,32.8302],[-83.6315,32.8333],[-83.6302,32.8352]]]}')
 ) as v(city_slug, name, color, geojson)
-join cities c on c.slug = v.city_slug;
+join cities c on c.slug = v.city_slug
+on conflict (city_id, name) do update set
+  geojson = excluded.geojson,
+  color = excluded.color;
