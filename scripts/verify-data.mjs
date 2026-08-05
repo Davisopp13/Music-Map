@@ -38,12 +38,12 @@ const [cities, locations, trails, stops, connections, districts] =
     rows("cities", "id,slug,name"),
     rows(
       "locations",
-      "id,city_id,slug,name,pin_type,coords_verified,spotify_track_id,spotify_track_label,image_url,image_attribution,venue_status,official_url,tickets_url,setlistfm_url,setlistfm_venue_id"
+      "id,city_id,slug,name,lat,lng,pin_type,coords_verified,spotify_track_id,spotify_track_label,image_url,image_attribution,venue_status,official_url,tickets_url,setlistfm_url,setlistfm_venue_id"
     ),
     rows("trails", "id,slug,name"),
     rows("trail_stops", "trail_id,location_id,stop_order"),
     rows("connections", "id,from_location_id,to_location_id"),
-    rows("districts", "id,city_id,name"),
+    rows("districts", "id,city_id,name,geojson"),
   ]);
 
 check(cities.length === 4, "4 cities", `${cities.length}`);
@@ -208,12 +208,39 @@ check(
   trailProblems.join(", ")
 );
 
+const locationBySlug = new Map(
+  locations.map((location) => [location.slug, location])
+);
+const nashvilleDistrictChecks = {
+  "Music Row": ["rca-studio-b", "quonset-hut"],
+  "Jefferson Street": ["club-baron"],
+  "The Gulch": ["station-inn"],
+  "Lower Broadway": ["ryman-auditorium", "tootsies-orchid-lounge"],
+};
+const districtFramingProblems = [];
+for (const [districtName, locationSlugs] of Object.entries(
+  nashvilleDistrictChecks
+)) {
+  const district = districts.find((item) => item.name === districtName);
+  const ring = district?.geojson?.coordinates?.[0];
+  for (const slug of locationSlugs) {
+    const location = locationBySlug.get(slug);
+    if (!location || !ring || !pointInPolygon([location.lng, location.lat], ring)) {
+      districtFramingProblems.push(`${slug} / ${districtName}`);
+    }
+  }
+}
+check(
+  districtFramingProblems.length === 0,
+  "corrected Nashville pins remain inside their district washes",
+  districtFramingProblems.join(", ")
+);
+
 if (!process.argv.includes("--skip-remote")) {
-  const brokenImages = await remoteFailures(
+  const brokenImages = await imageFailures(
     imageUrls.map((location) => ({
       slug: location.slug,
       url: location.image_url,
-      kind: "image",
     }))
   );
   check(
@@ -267,7 +294,6 @@ async function remoteFailures(items) {
             signal: AbortSignal.timeout(30000),
             headers: {
               "user-agent": "MusicMapDataVerifier/1.0",
-              ...(item.kind === "image" ? { range: "bytes=0-1023" } : {}),
             },
           });
           await response.body?.cancel();
@@ -280,4 +306,83 @@ async function remoteFailures(items) {
     broken.push(...results.filter(Boolean));
   }
   return broken;
+}
+
+async function imageFailures(items) {
+  const commons = items.filter((item) => commonsFilename(item.url));
+  const direct = items.filter((item) => !commonsFilename(item.url));
+  const broken = await remoteFailures(direct);
+
+  for (let index = 0; index < commons.length; index += 12) {
+    const batch = commons.slice(index, index + 12);
+    const api = new URL("https://commons.wikimedia.org/w/api.php");
+    api.search = new URLSearchParams({
+      action: "query",
+      format: "json",
+      prop: "imageinfo",
+      iiprop: "url",
+      titles: batch.map((item) => `File:${commonsFilename(item.url)}`).join("|"),
+    });
+    try {
+      const response = await fetch(api, {
+        signal: AbortSignal.timeout(30000),
+        headers: { "user-agent": "MusicMapDataVerifier/1.0" },
+      });
+      if (!response.ok) {
+        broken.push(...batch.map((item) => `${item.slug} (${response.status})`));
+        continue;
+      }
+      const result = await response.json();
+      const pages = Object.values(result.query?.pages ?? {});
+      const validFiles = new Set(
+        pages
+          .filter((page) => page.imageinfo?.[0]?.url)
+          .map((page) => normalizeFilename(page.title.replace(/^File:/, "")))
+      );
+      for (const item of batch) {
+        if (!validFiles.has(normalizeFilename(commonsFilename(item.url)))) {
+          broken.push(`${item.slug} (missing Commons file)`);
+        }
+      }
+    } catch (error) {
+      broken.push(...batch.map((item) => `${item.slug} (${error.name})`));
+    }
+  }
+  return broken;
+}
+
+function commonsFilename(value) {
+  const url = new URL(value);
+  if (url.hostname === "upload.wikimedia.org") {
+    const parts = url.pathname.split("/");
+    return decodeURIComponent(
+      url.pathname.includes("/thumb/") ? parts.at(-2) : parts.at(-1)
+    );
+  }
+  if (url.hostname === "commons.wikimedia.org") {
+    const marker = "/wiki/Special:FilePath/";
+    if (url.pathname.startsWith(marker)) {
+      return decodeURIComponent(url.pathname.slice(marker.length));
+    }
+  }
+  return null;
+}
+
+function normalizeFilename(value) {
+  return value.replaceAll("_", " ").trim().toLocaleLowerCase();
+}
+
+function pointInPolygon([x, y], ring) {
+  let inside = false;
+  for (let index = 0, previous = ring.length - 1; index < ring.length; previous = index++) {
+    const [xi, yi] = ring[index];
+    const [xj, yj] = ring[previous];
+    if (
+      yi > y !== yj > y &&
+      x < ((xj - xi) * (y - yi)) / (yj - yi) + xi
+    ) {
+      inside = !inside;
+    }
+  }
+  return inside;
 }

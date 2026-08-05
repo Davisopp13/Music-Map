@@ -48,13 +48,16 @@ for (const viewport of viewports) {
     );
 
     await page.getByLabel("Next stop").click();
+    await page.waitForTimeout(1200);
     await page.getByLabel("Previous stop").click();
+    await page.waitForTimeout(1200);
     check(
       await page.getByText(`Stop 1 of ${stopCount}`, { exact: true }).count() > 0,
       `${viewport.name}: ${city} trail reverses`
     );
     for (let index = 1; index < stopCount; index++) {
       await page.getByLabel("Next stop").click();
+      await page.waitForTimeout(1200);
     }
     check(
       await page.getByText(`Stop ${stopCount} of ${stopCount}`, { exact: true }).count() > 0 &&
