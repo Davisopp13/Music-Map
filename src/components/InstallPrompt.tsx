@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { Plus, Share, SquarePlus, X } from "lucide-react";
+import { isEmbedded } from "@/lib/embed";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>;
@@ -43,6 +44,7 @@ function useIsIOS(): boolean {
 export default function InstallPrompt() {
   const standalone = useStandalone();
   const isIOS = useIsIOS();
+  const embedded = useSyncExternalStore(noopSubscribe, isEmbedded, () => false);
   const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(
     null
   );
@@ -68,7 +70,7 @@ export default function InstallPrompt() {
 
   // already on the home screen, or a browser with neither a deferred
   // prompt nor iOS conventions: stay quiet
-  if (standalone || installed || (!deferred && !isIOS)) return null;
+  if (embedded || standalone || installed || (!deferred && !isIOS)) return null;
 
   const onClick = async () => {
     if (deferred) {

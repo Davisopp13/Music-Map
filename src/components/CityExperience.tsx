@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { emitToPortfolio } from "@/lib/embed";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { City, CityData, Connection } from "@/lib/types";
@@ -74,6 +75,15 @@ export default function CityExperience({
     currentStop && selected && currentStop.location_id === selected.id
       ? currentStop
       : null;
+
+  // Progress for the docodelab.com test drive's "Things to try" (no-op outside it).
+  useEffect(() => emitToPortfolio("city"), []);
+  useEffect(() => {
+    if (selectedId) emitToPortfolio("pin");
+  }, [selectedId]);
+  useEffect(() => {
+    if (trailActive) emitToPortfolio("trail");
+  }, [trailActive]);
 
   // Plain functions: the React Compiler memoizes these automatically.
   const selectPin = (id: string) => {
