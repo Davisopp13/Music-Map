@@ -14,8 +14,8 @@ import type { PinType } from "./types";
 // at a glance on the muted basemap. Red is deliberately absent: the single
 // action red (--accent) means "happening now" (active trail, now playing).
 // `onColor` is the icon/text ink on that label (venue's marquee yellow needs
-// dark ink); `offsetInk` is the letterpress second ink, printed 1.5px off
-// register behind the label.
+// dark ink); `offsetInk` is the letterpress second ink, printed 2px off
+// register behind the story card heading.
 const MUSTARD_OFFSET = "rgba(224, 165, 38, 0.55)";
 const RED_OFFSET = "rgba(200, 55, 45, 0.45)";
 const CREAM = "#faf5ea";
