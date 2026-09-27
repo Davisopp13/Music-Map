@@ -2,9 +2,12 @@
 
 ## Project
 
-A personal, interactive atlas of American music history. The shipped baseline
-has four cities (Bristol, Macon, Atlanta, Nashville), 42 story pins, four ordered
-trails, districts, and inter-city story threads. Optimize for delight and
+A personal, interactive atlas of American music history. The repository SQL baseline through update 14
+has four cities (Bristol, Macon, Atlanta, Nashville), 55 story pins, five ordered
+trails with 41 stops, eight districts, and 33 inter-city/intra-city story threads.
+Davis applied updates 13–14; live data verification passed. The prior Phase 1 baseline was
+42 pins and four trails. The second Atlanta trail is stored but needs separately
+scoped UI selection work. Optimize for delight and
 shipping, not product-scale abstraction.
 
 ## Stack and data

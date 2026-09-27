@@ -25,40 +25,46 @@ Run each file once in this exact order:
 15. `update_10_images.sql`
 16. `update_11_venue_enrichment.sql`
 17. `update_12_phase1_completion.sql`
+18. `update_13_atlanta_depth.sql`
+19. `update_14_chapter_depth.sql`
 
 `geocode_update.sql` is retained as pre-numbered Bristol project history. Do not
 run it during a clean install; its corrected values are already in the Bristol
 seed.
 
-The final expected baseline is 4 cities, 42 locations, 4 trails, 35 trail
-stops, 25 connections, and 8 districts. All 42 coordinates are verified.
+The repository SQL baseline through update 14 is **4 cities, 55 locations,
+5 trails, 41 trail stops, 33 connections, and 8 districts**. City pin counts:
+Bristol 12, Macon 11, Atlanta 20, Nashville 12. There are 22 venue pins,
+33 existing Spotify pairs, and 17 intentional image gaps. All coordinate flags
+are set; the source ledger distinguishes new verified points from inherited
+coordinates that could not be independently matched again.
+
+Davis has applied updates 13–14 to Supabase. **Live data verification passed**,
+including the expected counts, selected image files, and Spotify IDs. The shipped Phase 1 baseline was 42 pins / 4 trails / 35 stops /
+25 connections. See [the source and audit ledger](sources/update_13_14_sources.md)
+for all 42 existing-pin audits, 13 new pins, evidence, licenses, unresolved
+claims, rejected candidates, and media suggestions.
 
 ## Existing project
 
-If updates 01–11 are already present, apply only
-`update_12_phase1_completion.sql`. It is transactional and repeat-safe, and all
-data mutations are keyed by stable location slug.
+On a database already through update 12, review and apply in this exact order:
 
-For a temporary CLI link without adding migration infrastructure to this repo:
+1. `update_13_atlanta_depth.sql`
+2. `update_14_chapter_depth.sql`
 
-```text
-phase1_workdir=$(mktemp -d)
-supabase init --workdir "$phase1_workdir"
-supabase link --workdir "$phase1_workdir" --project-ref <project-ref>
-supabase db query --workdir "$phase1_workdir" --linked \
-  --file /absolute/path/to/db/update_12_phase1_completion.sql
-```
+Both files are transactional and repeat-safe. Every mutation resolves stable
+slugs; there are no hard-coded UUIDs. The files are separate transactions: if
+14 fails, resolve the cause and rerun 14. Do not rerun seeds on an existing DB.
+Export affected tables before application and retain the snapshot through live
+verification. The older `snapshot:phase1` exporter covers update 12 only and is
+not a sufficient backup for this content pass. Recovery is normally reviewed
+fix-forward SQL, not deleting added rows with cascading relationships.
 
-Export affected rows before applying the update. Keep that snapshot until live
-verification and both viewport smoke tests pass. The normal recovery path is
-fix-forward by editing and rerunning update 12; restore the snapshot only when
-the applied data itself is wrong.
-
-The repository includes a narrow exporter for exactly those rows:
-
-```text
-npm run snapshot:phase1 -- /tmp/music-map-phase1-before.json
-```
+The new `atlanta-auburn-to-little-five` trail has six stops and a routed pedestrian
+distance of about 1.98 miles. The existing app selects only `trails[0]`; this
+second trail is stored but **not selectable in the current UI**. No application
+code was changed. Trail selection needs separate implementation before claiming
+that the new walk is available in the shipped interface.
 
 ## Verify
 
@@ -68,22 +74,58 @@ With `.env.local` pointing at the intended project:
 npm run verify:data
 ```
 
-The verifier is read-only. It checks the fixed counts, city pin totals,
+Live verification is read-only and expects updates 13–14. It checks the fixed counts, city pin totals,
 coordinate flags, venue-state/link rules, image attribution and documented
 gaps, Spotify ID pairing/reachability, connection endpoints, and contiguous
 trail stop order.
 
+### Local SQL verification
+
+```text
+npm run verify:data:local
+```
+
+This command now creates an isolated, disposable PostgreSQL database, installs
+schema + seeds + every numbered update, repeats updates 13–14, and compares all
+six tables including IDs. It never contacts Supabase, even when `.env.local`
+contains live credentials. It skips remote image/Spotify requests. PostgreSQL
+server/client tools must be installed; set `PG_BIN` to their directory if they
+are not found through Homebrew PostgreSQL 17 or `pg_config`. Run as a normal
+user because PostgreSQL `initdb` does not run as root. TCP is disabled; a private
+Unix socket and temporary data directory are removed after verification.
+
+Also run `npm run lint` and `npm run build`. After applying to Supabase, run
+live data/media verification, both viewport browser smoke tests, and PWA checks
+before shipping. Existing browser tests still encode the earlier baseline and
+need a separately scoped update before validating the expanded content.
+
 ## Intentional photo gaps
 
-Phase 1 leaves these null because no accurate, clearly reusable image was found:
+The content pass fills Ameris with an exact-site CC0 photograph, adds six images,
+and removes four misleading substitutions. These **17** slots remain null:
 
-- `ameris-bank-amphitheatre`
+- `152-nassau-street`
+- `anns-tic-toc`
 - `club-baron`
 - `criminal-records`
 - `grants-lounge`
 - `hard-rock-live-bristol`
+- `mcduffie-bell-house`
+- `quonset-hut`
 - `stankonia-studios`
+- `star-community-bar`
+- `tennessee-ernie-ford-birthplace`
 - `the-dungeon`
+- `the-masquerade`
+- `trap-music-museum`
+- `wax-n-facts`
+- `wcyb-farm-and-fun-time`
+- `wrfg-radio`
 
 Do not substitute a nearby building, unrelated performance, or unattributed
-promotional image merely to fill the card.
+promotional image merely to fill the card. Commons metadata/license checks
+succeeded for selected files; image bytes were blocked in the research
+environment, so live render checks remain part of post-application media QA. A subsequent
+browser check confirmed Chromium blocked the existing Ryman image with
+`ERR_BLOCKED_BY_ORB`; file-metadata validation passes but rendered-media QA
+remains unresolved. PWA checks passed after migration application.

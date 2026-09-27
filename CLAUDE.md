@@ -1,7 +1,10 @@
 # CLAUDE.md — Music History Map
 
-Follow the project guidance in `AGENTS.md`. The current baseline is four cities,
-42 pins, four trails with 35 stops, 25 story connections, and eight districts.
+Follow the project guidance in `AGENTS.md`. The repository SQL baseline through update 14 is four cities,
+55 pins (Bristol 12 / Macon 11 / Atlanta 20 / Nashville 12), five trails with
+41 stops, 33 story connections, and eight districts. Davis applied updates 13–14;
+these counts passed live data verification. The second Atlanta
+trail needs separate UI selection work; the app currently chooses the first.
 
 The map uses the custom style in `src/lib/basemap.ts` over OpenFreeMap vector
 tiles. Self-hosted letterpress glyphs live in `public/glyphs/` and can be
