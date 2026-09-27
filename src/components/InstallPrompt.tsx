@@ -110,7 +110,7 @@ export default function InstallPrompt() {
             >
               <X size={17} />
             </button>
-            <p className="font-poster text-[10px] font-semibold uppercase tracking-[0.2em] text-accent-rust">
+            <p className="font-poster text-[10px] font-semibold uppercase tracking-[0.2em] text-accent">
               ✦ Two taps ✦
             </p>
             <h2 className="mt-1 font-poster text-xl font-semibold uppercase tracking-[0.04em]">

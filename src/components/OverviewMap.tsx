@@ -213,6 +213,7 @@ export default function OverviewMap({
   return (
     <div className="absolute inset-0">
       <div ref={containerRef} className="h-full w-full" />
+      <div className="paper-grain pointer-events-none absolute inset-0" aria-hidden />
       <CompassRose className="pointer-events-none absolute right-3 top-[max(0.9rem,env(safe-area-inset-top))] z-10 opacity-80" />
       {pinEls &&
         locations.map((loc) => {

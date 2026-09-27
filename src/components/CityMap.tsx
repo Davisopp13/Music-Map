@@ -26,7 +26,8 @@ import type {
   TrailStop,
 } from "@/lib/types";
 
-const INK_TRAIL = "#473a2b";
+// the trail you are walking is printed in the one action red
+const INK_TRAIL = "#c8372d";
 const INK_THREAD = "#6b4e36";
 // faded mustard, the gig-poster's second ink — district stamps
 const INK_MUSTARD = "#9c7820";
@@ -596,6 +597,7 @@ export default function CityMap({
   return (
     <div className="absolute inset-0">
       <div ref={containerRef} className="h-full w-full" />
+      <div className="paper-grain pointer-events-none absolute inset-0" aria-hidden />
       <CompassRose className="pointer-events-none absolute right-3 top-[max(0.9rem,env(safe-area-inset-top))] z-10 opacity-80" />
       {markerEls &&
         locations.map((loc) => {
@@ -701,14 +703,17 @@ function PinMarker({
       >
         <span
           className="flex h-5 w-5 items-center justify-center rounded-full"
-          style={{ background: cfg.color }}
+          style={{
+            background: cfg.color,
+            boxShadow: `1.5px 1.5px 0 ${cfg.offsetInk}`,
+          }}
         >
-          <Icon size={11} color="#faf5ea" strokeWidth={2.6} />
+          <Icon size={11} color={cfg.onColor} strokeWidth={2.6} />
         </span>
       </div>
       {stopNumber !== null && (
         // trail stops are note heads — filled, tilted, numbered; the
-        // current stop sings in rust
+        // current stop sings in the action red
         <span
           className={`absolute -right-2.5 -top-2 transition-transform duration-200 ${
             currentStop ? "scale-125" : ""
@@ -716,13 +721,13 @@ function PinMarker({
         >
           <span
             className={`absolute -top-[7px] right-0 h-2.5 w-[2px] rounded-full ${
-              currentStop ? "bg-accent-rust" : "bg-foreground"
+              currentStop ? "bg-accent" : "bg-foreground"
             }`}
             aria-hidden
           />
           <span
             className={`flex h-[17px] w-[21px] -rotate-12 items-center justify-center rounded-[50%] border border-paper text-[11px] font-bold leading-none text-paper ${
-              currentStop ? "bg-accent-rust" : "bg-foreground"
+              currentStop ? "bg-accent" : "bg-foreground"
             }`}
           >
             {stopNumber}

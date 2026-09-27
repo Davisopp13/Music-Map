@@ -40,9 +40,9 @@ export default function TrailBar({
           onClick={onStart}
           className="flex items-center gap-2.5 rounded-md border-2 border-foreground bg-paper py-2.5 pl-4 pr-5 text-foreground shadow-[0_4px_20px_rgba(43,38,32,0.35)] transition-transform active:scale-95"
         >
-          <Route size={18} className="text-accent-rust" />
+          <Route size={18} className="text-accent" />
           <span className="text-left leading-tight">
-            <span className="block font-poster text-[10px] font-semibold uppercase tracking-[0.2em] text-accent-rust">
+            <span className="block font-poster text-[10px] font-semibold uppercase tracking-[0.2em] text-accent">
               Walk the trail
             </span>
             <span className="block font-poster text-sm font-medium uppercase tracking-[0.05em]">
