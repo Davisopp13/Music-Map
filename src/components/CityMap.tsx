@@ -703,10 +703,7 @@ function PinMarker({
       >
         <span
           className="flex h-5 w-5 items-center justify-center rounded-full"
-          style={{
-            background: cfg.color,
-            boxShadow: `1.5px 1.5px 0 ${cfg.offsetInk}`,
-          }}
+          style={{ background: cfg.color }}
         >
           <Icon size={11} color={cfg.onColor} strokeWidth={2.6} />
         </span>
