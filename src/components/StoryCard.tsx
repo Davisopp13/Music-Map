@@ -90,38 +90,70 @@ export default function StoryCard({
       }`}
       aria-label={location.name}
     >
-      {/* drag-handle affordance on mobile */}
-      <div className="flex shrink-0 justify-center pt-2 md:hidden">
-        <div className="h-1 w-10 rounded-full bg-paper-edge" />
+      {/* drag-handle affordance on mobile, printed over the label band */}
+      <div
+        className="pointer-events-none absolute inset-x-0 top-2 z-10 flex justify-center md:hidden"
+        aria-hidden
+      >
+        <div
+          className="h-1 w-10 rounded-full opacity-40"
+          style={{ background: cfg.onColor }}
+        />
       </div>
 
+      {/* paper disc with an ink rim: reads over the label band and over
+          the story once the band scrolls away */}
       <button
         onClick={onClose}
         aria-label="Close"
-        className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-background/90 text-ink-soft transition-colors hover:text-foreground"
+        className="absolute right-3 top-3 z-10 flex h-11 w-11 items-center justify-center rounded-full border border-foreground/40 bg-paper text-foreground shadow-[0_1px_4px_rgba(43,38,32,0.2)] transition-transform hover:scale-105 active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground"
       >
-        <X size={17} />
+        <X size={18} />
       </button>
 
-      <div className="overflow-y-auto overscroll-contain px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-3 md:pt-5">
-        <h2 className="pr-9 font-display text-[1.65rem] font-semibold leading-[1.15]">
-          {location.name}
-        </h2>
-
-        {/* type + era */}
-        <div className="mt-2 flex flex-wrap items-center gap-2">
+      <div className="overflow-y-auto overscroll-contain pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+        {/* The record label: the pin's ink as a band, pressed rings off
+            the right edge, the era stamped like a catalog number. */}
+        <header
+          className="relative overflow-hidden px-5 pb-5 pt-7 md:pt-6"
+          style={{ background: cfg.color, color: cfg.onColor }}
+        >
           <span
-            className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-paper"
-            style={{ background: cfg.color }}
+            className="pointer-events-none absolute -right-[70px] -top-[64px] h-[220px] w-[220px] rounded-full border-[1.5px] border-current opacity-15"
+            aria-hidden
+          />
+          <span
+            className="pointer-events-none absolute -right-[40px] -top-[34px] h-[160px] w-[160px] rounded-full border-[1.5px] border-current opacity-15"
+            aria-hidden
+          />
+          <span
+            className="pointer-events-none absolute -right-[10px] -top-[4px] h-[100px] w-[100px] rounded-full border-[1.5px] border-current opacity-20"
+            aria-hidden
+          />
+
+          <div className="relative flex flex-wrap items-center gap-2.5 pr-12">
+            <span
+              className="inline-flex items-center gap-1.5 rounded-full border-[1.5px] px-2.5 py-0.5 font-poster text-[12px] font-semibold uppercase tracking-[0.16em]"
+              style={{ borderColor: "currentColor" }}
+            >
+              <TypeIcon size={12} strokeWidth={2.4} />
+              {cfg.label}
+            </span>
+            <EraBadge start={location.era_start} end={location.era_end} />
+          </div>
+
+          <h2
+            className="relative mt-2.5 pr-10 font-display text-[1.85rem] font-semibold leading-[1.1]"
+            style={{ textShadow: `2px 2px 0 ${cfg.offsetInk}` }}
           >
-            <TypeIcon size={12} strokeWidth={2.4} />
-            {cfg.label}
-          </span>
-          <EraBadge start={location.era_start} end={location.era_end} />
-        </div>
+            {location.name}
+          </h2>
+        </header>
+
+        <div className="px-5">
 
         {location.spotify_track_id && (
-          <div className="mt-4">
+          <div className="mt-5">
             <iframe
               ref={spotifyRef}
               src={`https://open.spotify.com/embed/track/${location.spotify_track_id}?theme=0`}
@@ -160,16 +192,31 @@ export default function StoryCard({
         )}
 
         {stop && (
-          <div className="mt-4 rounded-lg border-l-4 bg-[#f3ead4] p-3.5 [border-left-color:var(--accent)]">
-            <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-accent">
-              Stop {stop.stop_order} of {stopCount}
-              {trailName ? ` · ${trailName}` : ""}
-            </p>
-            {stop.stop_note_md && (
-              <div className="story-prose text-[15px]">
-                <ReactMarkdown components={mdComponents}>{stop.stop_note_md}</ReactMarkdown>
-              </div>
-            )}
+          // a ticket stub: the stop number torn off along a dashed perforation
+          <div className="mt-4 flex items-stretch overflow-hidden rounded-md bg-[#f3ead4]">
+            <div className="flex shrink-0 flex-col items-center justify-center border-r-2 border-dashed border-paper-edge px-3.5 py-2.5 font-poster">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-ink-soft">
+                Stop
+              </span>
+              <span className="text-[26px] font-semibold leading-none text-accent">
+                {stop.stop_order}
+              </span>
+              <span className="mt-0.5 text-[11px] font-medium uppercase tracking-[0.12em] text-ink-soft">
+                of {stopCount}
+              </span>
+            </div>
+            <div className="min-w-0 flex-1 px-3.5 py-2.5">
+              {trailName && (
+                <p className="font-poster text-[13px] font-medium uppercase tracking-[0.06em]">
+                  {trailName}
+                </p>
+              )}
+              {stop.stop_note_md && (
+                <div className="story-prose mt-1 text-[15px]">
+                  <ReactMarkdown components={mdComponents}>{stop.stop_note_md}</ReactMarkdown>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
@@ -213,7 +260,7 @@ export default function StoryCard({
                       <span className="min-w-0 flex-1 truncate">
                         {other.name}
                         {otherCity && (
-                          <span className="ml-1.5 text-[11px] font-semibold uppercase tracking-wider text-accent">
+                          <span className="ml-1.5 text-[11px] font-semibold uppercase tracking-wider text-foreground/70">
                             {otherCity.name}
                           </span>
                         )}
@@ -299,6 +346,7 @@ export default function StoryCard({
             </a>
           </p>
         )}
+        </div>
       </div>
     </aside>
   );
@@ -378,11 +426,15 @@ function venueStatusLabel(
   }
 }
 
+// Stamped like a catalog number on the label; inherits the label's ink.
 function EraBadge({ start, end }: { start: number | null; end: number | null }) {
   if (!start) return null;
-  const label = end ? `${start}–${end}` : `since ${start}`;
+  const label = end ? `${start} – ${end}` : `since ${start}`;
   return (
-    <span className="inline-flex items-center rounded-full border border-paper-edge bg-background px-2.5 py-1 font-display text-[12px] font-medium tracking-wide text-foreground">
+    <span
+      className="inline-flex items-center rounded-[3px] border-[1.5px] px-2 py-0.5 font-poster text-[13px] font-semibold tracking-[0.14em]"
+      style={{ borderColor: "currentColor" }}
+    >
       {label}
     </span>
   );

@@ -180,14 +180,14 @@ export default function CityExperience({
         >
           ← All cities
         </Link>
-        <h1 className="font-poster text-[34px] font-semibold uppercase leading-[0.95] tracking-[0.04em] md:text-[40px]">
+        <h1 className="offset-ink font-poster text-[34px] font-semibold uppercase leading-[0.95] tracking-[0.04em] md:text-[40px]">
           {city.name}
         </h1>
         {city.state && (
-          <p className="mt-1 flex items-center gap-2 font-poster text-[11px] font-medium uppercase tracking-[0.4em] text-accent-rust">
-            <span className="h-px w-7 bg-accent-rust/60" aria-hidden />
+          <p className="mt-1 flex items-center gap-2 font-poster text-[11px] font-medium uppercase tracking-[0.4em] text-accent">
+            <span className="h-px w-7 bg-accent/60" aria-hidden />
             <span>✦&ensp;{city.state}&ensp;✦</span>
-            <span className="h-px w-7 bg-accent-rust/60" aria-hidden />
+            <span className="h-px w-7 bg-accent/60" aria-hidden />
           </p>
         )}
         {otherCities.length > 0 && (
